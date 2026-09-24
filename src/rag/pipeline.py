@@ -23,7 +23,7 @@ from ..indicators import add_all_indicators
 from ..observability.usage_tracker import get_usage_tracker
 from ..strategy import MACDStrategy, MAStrategy, CompositeStrategy
 from .citation import verify_citations
-from .embeddings import HashEmbedder
+from .embeddings import get_embedder
 from .hybrid_retriever import HybridRetriever
 from .indexers import (
     build_knowledge_chunks,
@@ -88,7 +88,7 @@ def run_report_pipeline(
     Returns:
         A dict with ``report``, ``chunks``, ``citation``, and ``usage`` keys.
     """
-    embed_fn = embed_fn or HashEmbedder(dim=128).embed
+    embed_fn = embed_fn or get_embedder().embed
     tracker = get_usage_tracker()
     tracker.reset()
 
@@ -180,9 +180,7 @@ def _retrieve(chunks, query: str, top_k: int, embed_fn, tracker):
     keyword = BM25KeywordIndex()
     keyword.index(chunks)
     store = InMemoryStore(embed_fn)
-    with tracker.trace("embed", "local:hash") as span:
-        store.add(chunks)
-        span.set_usage(input_tokens=len(chunks))
+    store.add(chunks)  # embedders self-report usage (OpenAI) or are $0 (local)
     retriever = HybridRetriever(store.query, keyword)
     with tracker.trace("rag.retrieve", "hybrid") as span:
         retrieved = retriever.retrieve(query, top_k=top_k, chunks_by_id={c.chunk_id: c for c in chunks})

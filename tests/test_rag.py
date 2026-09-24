@@ -120,6 +120,45 @@ def test_hash_embedder_deterministic():
     assert abs(float(np.linalg.norm(a)) - 1.0) < 1e-9
 
 
+def test_get_embedder_falls_back_to_hash(monkeypatch):
+    from src.rag.embeddings import HashEmbedder, get_embedder
+
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    assert isinstance(get_embedder(), HashEmbedder)
+
+
+def test_openai_embedder_records_usage():
+    from src.rag.embeddings import OpenAIEmbedder
+    from src.observability.usage_tracker import get_usage_tracker, reset_usage_tracker
+
+    class FakeUsage:
+        prompt_tokens = 7
+
+    class FakeEmbedding:
+        embedding = [0.1, 0.2, 0.3]
+
+    class FakeResponse:
+        data = [FakeEmbedding()]
+        usage = FakeUsage()
+
+    class FakeEmbeddings:
+        def create(self, **kwargs):
+            return FakeResponse()
+
+    class FakeClient:
+        embeddings = FakeEmbeddings()
+
+    reset_usage_tracker()
+    embedder = OpenAIEmbedder(client=FakeClient())
+    vector = embedder.embed("hello")
+    assert list(vector) == [0.1, 0.2, 0.3]
+
+    records = get_usage_tracker()._snapshot()
+    assert records[0].operation == "embed"
+    assert records[0].model == "text-embedding-3-small"
+    assert records[0].input_tokens == 7
+
+
 def test_verify_citations():
     embed = HashEmbedder(dim=64)
     retrieved = {

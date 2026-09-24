@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 from typing import Protocol
 
 import numpy as np
@@ -46,8 +47,46 @@ class SentenceTransformerEmbedder:
         return np.asarray(self._model.encode(text), dtype=float)
 
 
+class OpenAIEmbedder:
+    """Embedding via the OpenAI API (``text-embedding-3-small``).
+
+    Records each call's token usage and cost via the UsageTracker.
+    """
+
+    def __init__(self, model: str = "text-embedding-3-small", client=None) -> None:
+        self.model = model
+        self._client = client
+
+    def _get_client(self):
+        if self._client is None:
+            from openai import OpenAI  # Lazy import.
+
+            self._client = OpenAI()
+        return self._client
+
+    def embed(self, text: str) -> np.ndarray:
+        from ..observability.usage_tracker import get_usage_tracker
+
+        tracker = get_usage_tracker()
+        with tracker.trace("embed", self.model) as span:
+            response = self._get_client().embeddings.create(model=self.model, input=text)
+            span.set_usage(input_tokens=response.usage.prompt_tokens)
+        return np.asarray(response.data[0].embedding, dtype=float)
+
+
 def get_embedder() -> Embedder:
-    """Return a sentence-transformers embedder if importable, else HashEmbedder."""
+    """Return OpenAI (if a key is set), sentence-transformers, else hash."""
+    try:
+        from dotenv import load_dotenv  # Lazy import.
+
+        load_dotenv()
+    except ImportError:
+        pass
+    if os.getenv("OPENAI_API_KEY"):
+        try:
+            return OpenAIEmbedder()
+        except Exception:  # noqa: BLE001 - fall through on config/network errors
+            pass
     try:
         return SentenceTransformerEmbedder()
     except (ImportError, OSError):
