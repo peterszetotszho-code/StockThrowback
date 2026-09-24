@@ -1,10 +1,27 @@
-# stock-trend-lab
+# Stock Trend
 
 Systematic historical trend review and strategy backtesting for individual stocks.
 
 > This project does **not** predict future prices. It engineers a reproducible
 > pipeline to replay historical trends, backtest technical-indicator strategies,
 > and evaluate their performance honestly — including failure analysis.
+
+## Screenshots
+
+**Dashboard** — candlestick + indicators, equity & drawdown, strategy comparison, and failure analysis:
+
+<img src="docs/screenshots/dashboard.png" alt="Dashboard" width="720">
+
+**RAG report** — LLM-generated, citation-verified analysis with the retrieved evidence chunks:
+
+<img src="docs/screenshots/rag-report.png" alt="RAG report" width="720">
+
+**Glossary** — indicators, metrics, and strategies explained:
+
+<img src="docs/screenshots/glossary.png" alt="Glossary" width="720">
+
+> Screenshots are captured headlessly with Playwright. Regenerate with
+> `node frontend/scripts/capture-screenshots.mjs` (backend and frontend must be running).
 
 ## Tech Stack
 
