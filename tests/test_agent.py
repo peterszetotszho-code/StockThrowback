@@ -87,6 +87,47 @@ def test_execute_step_validation_error_is_fatal():
     assert "validation" in result.error
 
 
+def test_openai_model_records_usage():
+    from src.agent.llm import OpenAIChatModel
+    from src.observability.usage_tracker import get_usage_tracker, reset_usage_tracker
+
+    class FakeUsage:
+        prompt_tokens = 100
+        completion_tokens = 50
+
+    class FakeMessage:
+        content = "hello"
+        tool_calls = None
+
+    class FakeChoice:
+        message = FakeMessage()
+
+    class FakeResp:
+        choices = [FakeChoice()]
+        usage = FakeUsage()
+
+    class FakeCompletions:
+        def create(self, **kwargs):
+            return FakeResp()
+
+    class FakeChat:
+        completions = FakeCompletions()
+
+    class FakeClient:
+        chat = FakeChat()
+
+    reset_usage_tracker()
+    model = OpenAIChatModel(model="gpt-4.1-mini", client=FakeClient())
+    response = model.complete([{"role": "user", "content": "hi"}])
+    assert response.content == "hello"
+
+    records = get_usage_tracker()._snapshot()
+    assert len(records) == 1
+    assert records[0].operation == "llm.chat"
+    assert records[0].input_tokens == 100
+    assert records[0].output_tokens == 50
+
+
 def test_run_agent_end_to_end():
     registry = ToolRegistry()
     registry.register(

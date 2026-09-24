@@ -85,3 +85,41 @@ def run_backtests(
         logger.info("Backtesting strategy '%s' ...", name)
         results[name] = run_backtest(df, strategy_class, cash=cash, commission=commission)
     return results
+
+
+def optimize_parameters(
+    df: pd.DataFrame,
+    strategy_class: Type[Strategy],
+    *,
+    maximize: str = "Sharpe Ratio",
+    cash: float = DEFAULT_CASH,
+    commission: float = DEFAULT_COMMISSION,
+    **param_grid,
+) -> pd.Series:
+    """Grid-search strategy parameters and return the best stats.
+
+    Args:
+        df: OHLCV DataFrame.
+        strategy_class: Strategy subclass whose class attributes are parameters.
+        maximize: Stats key to maximize (e.g. "Sharpe Ratio" or "Return [%]").
+        cash: Initial cash.
+        commission: Commission rate.
+        **param_grid: Parameter name -> iterable of candidate values
+            (e.g. ``fast=range(5, 30, 5), slow=range(20, 80, 10)``).
+
+    Returns:
+        The best stats Series; the winning parameter values are set on
+        ``strategy_class`` by backtesting.py.
+    """
+    _validate(df)
+    if not param_grid:
+        raise ValueError("optimize_parameters requires at least one param grid (e.g. fast=range(...)).")
+    bt = Backtest(
+        df,
+        strategy_class,
+        cash=cash,
+        commission=commission,
+        exclusive_orders=True,
+        finalize_trades=True,
+    )
+    return bt.optimize(**param_grid, maximize=maximize)

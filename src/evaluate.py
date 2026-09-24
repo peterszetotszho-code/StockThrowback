@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 
+import numpy as np
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -105,3 +106,94 @@ def analyze_failures(stats: pd.Series) -> str:
         )
 
     return " ".join(lines)
+
+
+def walk_forward(
+    df: pd.DataFrame,
+    strategy_class,
+    n_splits: int = 5,
+    cash: float = 100_000,
+    commission: float = 0.001,
+) -> pd.DataFrame:
+    """Evaluate a strategy on contiguous, non-overlapping windows.
+
+    Fixed-parameter strategies have no "training", so walk-forward here means:
+    split the series into ``n_splits`` equal, contiguous windows and evaluate
+    the strategy independently on each. A strategy that stays positive across
+    later windows is more robust than one whose gains come from a single lucky
+    window.
+
+    Args:
+        df: OHLCV DataFrame.
+        strategy_class: Strategy subclass.
+        n_splits: Number of contiguous windows.
+        cash: Initial cash.
+        commission: Commission rate.
+
+    Returns:
+        DataFrame indexed by window (1..n) with start, end, return_pct,
+        sharpe, max_drawdown_pct, trades.
+    """
+    from .backtest import run_backtest
+
+    rows: list[dict] = []
+    for idx in np.array_split(np.arange(len(df)), n_splits):
+        if idx.size == 0:
+            continue
+        window = df.iloc[idx]
+        stats = run_backtest(window, strategy_class, cash=cash, commission=commission)
+        rows.append(
+            {
+                "start": window.index[0].strftime("%Y-%m-%d"),
+                "end": window.index[-1].strftime("%Y-%m-%d"),
+                "return_pct": _get(stats, "Return [%]"),
+                "sharpe": _get(stats, "Sharpe Ratio"),
+                "max_drawdown_pct": _get(stats, "Max. Drawdown [%]"),
+                "trades": int(_get(stats, "# Trades") or 0),
+            }
+        )
+    result = pd.DataFrame(rows)
+    result.index = pd.Index(range(1, len(rows) + 1), name="window")
+    return result
+
+
+def split_evaluate(
+    df: pd.DataFrame,
+    strategy_class,
+    train_ratio: float = 0.7,
+    cash: float = 100_000,
+    commission: float = 0.001,
+) -> pd.DataFrame:
+    """Compare in-sample vs out-of-sample performance on a single split.
+
+    The first ``train_ratio`` of the data is in-sample; the remainder is
+    out-of-sample. Degradation between the two is a warning sign of overfitting
+    (for parameterized strategies) or regime dependence (for fixed rules).
+
+    Args:
+        df: OHLCV DataFrame.
+        strategy_class: Strategy subclass.
+        train_ratio: Fraction of rows used as the in-sample window.
+        cash: Initial cash.
+        commission: Commission rate.
+
+    Returns:
+        DataFrame indexed by ["in_sample", "out_of_sample"] with columns
+        return_pct, sharpe, max_drawdown_pct, trades.
+    """
+    from .backtest import run_backtest
+
+    split = int(len(df) * train_ratio)
+    windows = (("in_sample", df.iloc[:split]), ("out_of_sample", df.iloc[split:]))
+    rows: dict[str, dict] = {}
+    for label, window in windows:
+        if window.empty:
+            continue
+        stats = run_backtest(window, strategy_class, cash=cash, commission=commission)
+        rows[label] = {
+            "return_pct": _get(stats, "Return [%]"),
+            "sharpe": _get(stats, "Sharpe Ratio"),
+            "max_drawdown_pct": _get(stats, "Max. Drawdown [%]"),
+            "trades": int(_get(stats, "# Trades") or 0),
+        }
+    return pd.DataFrame.from_dict(rows, orient="index")

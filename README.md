@@ -119,9 +119,10 @@ Honest findings from the same run:
 - Citation verification (existence, support score, coverage)
 - AI agent workflow (planning + tool calling + transient-retry)
 - Cost & latency observability for every model/tool call (config-driven pricing)
+- End-to-end RAG report endpoint (`/api/report`) + React dashboard
+- Walk-forward / out-of-sample evaluation and parameter optimization
 
 ## Remaining / Next
 
-- Wire the RAG + agent + observability layers into a single end-to-end command
-- Walk-forward / out-of-sample evaluation
-- Parameter optimization and robustness checks
+- Wire the news "event recall" and knowledge-base RAG directions into the report
+- Deeper robustness checks (Monte Carlo, walk-forward with re-optimization)

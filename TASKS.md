@@ -41,11 +41,15 @@ Legend:
 - [x] T7.3 orchestrator
 
 ## Phase 8 — Report
-- [~] T8.1 `report.py` (Markdown core done; LLM/RAG/tracker wiring pending)
+- [x] T8.1 `report.py` (Markdown core + RAG pipeline report)
 
 ## Phase 12 — Integration (wiring)
-- [ ] T12.1 wire UsageTracker into agent LLM calls + CLI
-- [ ] T12.2 end-to-end RAG command (build index, hybrid retrieve, rerank, cite, report)
+- [x] T12.1 wire UsageTracker into agent LLM calls + pipeline
+- [x] T12.2 end-to-end RAG report endpoint (`/api/report`)
+
+## Phase 13 — Robustness
+- [x] T13.1 walk-forward / out-of-sample evaluation
+- [x] T13.2 parameter optimization
 
 ## Phase 9 — Tests
 - [x] T9.1 indicator / loader / evaluate / report tests
@@ -55,4 +59,4 @@ Legend:
 - [x] T10.2 `docker-compose.yml`, notebook
 
 ## Phase 11 — Verification
-- [x] T11.1 install deps, run pytest (15 passed), real backtest + README results
+- [x] T11.1 install deps, run pytest (47 passed), real backtest + README results

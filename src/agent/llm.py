@@ -85,13 +85,18 @@ class OpenAIChatModel:
     ) -> LLMResponse:
         from openai import APIConnectionError, APIStatusError  # Lazy import.
 
+        from ..observability.usage_tracker import get_usage_tracker
+
+        tracker = get_usage_tracker()
         try:
             client = self._get_client()
             kwargs: dict[str, Any] = {"model": self.model, "messages": messages, "temperature": temperature}
             if tools:
                 kwargs["tools"] = tools
                 kwargs["tool_choice"] = tool_choice
-            resp = client.chat.completions.create(**kwargs)
+            with tracker.trace("llm.chat", self.model) as span:
+                resp = client.chat.completions.create(**kwargs)
+                span.set_usage_from_openai(resp.usage)
         except (APIConnectionError, APIStatusError) as exc:
             # Network / 429 / 5xx are transient; retryable upstream.
             raise TransientError(f"LLM API error: {exc}") from exc

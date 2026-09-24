@@ -3,6 +3,7 @@
 import pandas as pd
 
 from src import evaluate
+from src.strategy import MAStrategy
 
 
 def _stats(**overrides) -> pd.Series:
@@ -34,3 +35,15 @@ def test_analyze_failures_no_trades():
 def test_analyze_failures_losing():
     msg = evaluate.analyze_failures(_stats(**{"# Trades": 10, "Win Rate [%]": 30.0}))
     assert "whipsawed" in msg
+
+
+def test_walk_forward_shape(ohlcv):
+    result = evaluate.walk_forward(ohlcv, MAStrategy, n_splits=5)
+    assert len(result) == 5
+    assert list(result.columns) == ["start", "end", "return_pct", "sharpe", "max_drawdown_pct", "trades"]
+
+
+def test_split_evaluate_shape(ohlcv):
+    result = evaluate.split_evaluate(ohlcv, MAStrategy, train_ratio=0.7)
+    assert list(result.index) == ["in_sample", "out_of_sample"]
+    assert "sharpe" in result.columns
