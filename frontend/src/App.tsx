@@ -9,12 +9,16 @@ import type { BacktestResponse } from './types';
 const STRATEGIES = ['MA', 'MACD', 'Composite'];
 
 export default function App() {
-  const [ticker, setTicker] = useState('0700.HK');
+  const [code, setCode] = useState('0700');
+  const [exchange, setExchange] = useState('HK');
   const [start, setStart] = useState('2022-01-01');
   const [end, setEnd] = useState('2024-12-31');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<BacktestResponse | null>(null);
+
+  // Combine code + exchange into a Yahoo ticker (exchange is optional for US stocks).
+  const ticker = (code.trim() + (exchange.trim() ? '.' + exchange.trim() : '')).toUpperCase();
 
   const handleRun = async () => {
     setLoading(true);
@@ -41,7 +45,18 @@ export default function App() {
       <header className="header">
         <h1>stock-trend-lab</h1>
         <div className="controls">
-          <input value={ticker} onChange={(e) => setTicker(e.target.value)} placeholder="Ticker" />
+          <input
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            placeholder="Code (e.g. 0700)"
+            title="Stock code without the exchange suffix"
+          />
+          <input
+            value={exchange}
+            onChange={(e) => setExchange(e.target.value)}
+            placeholder="Exchange (e.g. HK)"
+            title="Exchange suffix; leave empty for US stocks (e.g. AAPL)"
+          />
           <input value={start} onChange={(e) => setStart(e.target.value)} placeholder="Start" />
           <input value={end} onChange={(e) => setEnd(e.target.value)} placeholder="End" />
           <button onClick={handleRun} disabled={loading}>
