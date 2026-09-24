@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { runBacktest } from './api';
 import { EquityChart } from './components/EquityChart';
 import { MetricsTable } from './components/MetricsTable';
@@ -7,6 +9,27 @@ import { ReportPanel } from './components/ReportPanel';
 import type { BacktestResponse } from './types';
 
 const STRATEGIES = ['MA', 'MACD', 'Composite'];
+
+const REGIONS = [
+  { label: 'Hong Kong', suffix: 'HK' },
+  { label: 'United States', suffix: '' },
+  { label: 'Shanghai (China)', suffix: 'SS' },
+  { label: 'Shenzhen (China)', suffix: 'SZ' },
+  { label: 'Taiwan', suffix: 'TW' },
+  { label: 'Japan', suffix: 'T' },
+  { label: 'United Kingdom', suffix: 'L' },
+];
+
+function toYMD(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function parseYMD(ymd: string): Date {
+  return new Date(`${ymd}T00:00:00`);
+}
 
 export default function App() {
   const [code, setCode] = useState('0700');
@@ -51,14 +74,29 @@ export default function App() {
             placeholder="Code (e.g. 0700)"
             title="Stock code without the exchange suffix"
           />
-          <input
+          <select
             value={exchange}
             onChange={(e) => setExchange(e.target.value)}
-            placeholder="Exchange (e.g. HK)"
-            title="Exchange suffix; leave empty for US stocks (e.g. AAPL)"
+            title="Market / exchange"
+          >
+            {REGIONS.map((region) => (
+              <option key={region.suffix || 'US'} value={region.suffix}>
+                {region.label}
+              </option>
+            ))}
+          </select>
+          <DatePicker
+            selected={parseYMD(start)}
+            onChange={(date) => date && setStart(toYMD(date))}
+            dateFormat="yyyy-MM-dd"
+            className="date-input"
           />
-          <input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
-          <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+          <DatePicker
+            selected={parseYMD(end)}
+            onChange={(date) => date && setEnd(toYMD(date))}
+            dateFormat="yyyy-MM-dd"
+            className="date-input"
+          />
           <button onClick={handleRun} disabled={loading}>
             {loading ? 'Running…' : 'Run backtest'}
           </button>
