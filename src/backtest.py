@@ -52,7 +52,14 @@ def run_backtest(
         cash,
         commission,
     )
-    bt = Backtest(df, strategy_class, cash=cash, commission=commission, exclusive_orders=True)
+    bt = Backtest(
+        df,
+        strategy_class,
+        cash=cash,
+        commission=commission,
+        exclusive_orders=True,
+        finalize_trades=True,
+    )
     return bt.run()
 
 

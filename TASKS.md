@@ -51,4 +51,4 @@ Legend:
 - [x] T10.2 `docker-compose.yml`, notebook
 
 ## Phase 11 — Verification
-- [~] T11.1 install deps + run pytest (15 passed); real backtest + README results pending
+- [x] T11.1 install deps, run pytest (15 passed), real backtest + README results

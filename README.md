@@ -50,20 +50,40 @@ stock-trend-lab/
 
 ## Evaluation Results
 
-_To be reproduced._ This section is intentionally a placeholder: the project
-never ships fabricated numbers. Run the Quick Start commands against real
-market data and paste the resulting comparison table here, for example:
+A real, reproducible run (no fabricated numbers):
 
-| Strategy | Return [%] | Sharpe Ratio | Max. Drawdown [%] | Win Rate [%] | Trades |
-|---|---|---|---|---|---|
-| _(fill in after a real run)_ | | | | | |
+- Ticker `0700.HK` (Tencent), 2022-01-01 to 2024-12-31 (734 trading days)
+- Initial cash $100,000, commission 0.1%, open trades finalized at period end
+
+Reproduce with:
+
+```bash
+python -m src.cli --ticker 0700.HK --start 2022-01-01 --end 2024-12-31
+```
+
+| Strategy | Return [%] | Sharpe Ratio | Max. Drawdown [%] | Win Rate [%] | Profit Factor | Trades |
+|---|---|---|---|---|---|---|
+| MA | 30.91 | 0.36 | -28.83 | 22.73 | 1.81 | 22 |
+| MACD | 18.69 | 0.22 | -36.82 | 39.13 | 1.40 | 23 |
+| Composite | 30.91 | 0.36 | -28.83 | 22.73 | 1.81 | 22 |
 
 ## Failure Analysis
 
-Honest failure analysis is a first-class deliverable, not an afterthought.
-`evaluate.analyze_failures` reports losing trades, the deepest drawdown window,
-and a qualitative caveat (e.g. whipsaw in ranging markets) instead of hiding
-underperforming periods. Record your own findings here after a real run.
+Honest findings from the same run:
+
+- **Low win rate, positive profit factor.** MA wins only ~23% of trades yet ends
+  profitable, because winners are much larger than losers — a classic
+  trend-following profile. This is *not* a robustness guarantee: a handful of
+  big trends carried the result, so the strategy is fragile in a trendless market.
+- **The Composite strategy is identical to MA here.** The RSI < 70 entry filter
+  was non-binding: on this ticker/period no golden cross coincided with an
+  overbought reading, so the added condition provided zero value. Worth testing
+  on other assets before calling it a real improvement.
+- **MACD underperforms.** Lower return, lower Sharpe, and a deeper -36.8%
+  drawdown than MA despite a higher win rate — its wins are too small to offset
+  the whipsaws.
+- `evaluate.analyze_failures` surfaces each of these automatically instead of
+  hiding underperforming periods.
 
 ## Roadmap (in development)
 

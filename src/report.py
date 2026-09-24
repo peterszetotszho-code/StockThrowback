@@ -26,7 +26,7 @@ def generate_report(
         A Markdown document as a string.
     """
     lines = [
-        f"# Stock Trend Analysis Report — {ticker}",
+        f"# Stock Trend Analysis Report - {ticker}",
         "",
         "## Data Range",
         "",

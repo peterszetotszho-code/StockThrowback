@@ -76,8 +76,12 @@ def analyze_failures(stats: pd.Series) -> str:
     # Locate the worst drawdown window from the equity curve when available.
     equity = getattr(stats, "_equity_curve", None)
     if equity is not None and not equity.empty and "DrawdownPct" in equity.columns:
-        worst_date = equity["DrawdownPct"].idxmin()
-        worst_value = equity["DrawdownPct"].min()
+        drawdown = equity["DrawdownPct"]
+        # backtesting.py stores drawdown as a positive fraction (0 = none).
+        # Locate the largest magnitude, convert to percent, and report it as
+        # negative to match the "Max. Drawdown [%]" stat convention.
+        worst_date = drawdown.abs().idxmax()
+        worst_value = -abs(drawdown.loc[worst_date]) * 100.0
         lines.append(
             f"The deepest equity dip of {worst_value:.1f}% was reached on "
             f"{worst_date:%Y-%m-%d}."
