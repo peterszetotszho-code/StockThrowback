@@ -1,12 +1,3 @@
----
-title: Stock Trend
-emoji: 📈
-colorFrom: indigo
-colorTo: blue
-sdk: docker
-pinned: false
----
-
 # Stock Trend
 
 Systematic historical trend review and strategy backtesting for individual stocks.
@@ -14,52 +5,6 @@ Systematic historical trend review and strategy backtesting for individual stock
 > This project does **not** predict future prices. It engineers a reproducible
 > pipeline to replay historical trends, backtest technical-indicator strategies,
 > and evaluate their performance honestly — including failure analysis.
-
-## Live Demo
-
-**Live demo:** https://spy-knowledgestorm-hunter-throw.trycloudflare.com
-_(temporary Cloudflare quick tunnel — the URL changes if the tunnel is restarted)_
-
-### Host it yourself
-
-**Cloudflare Tunnel** (free, no account) — run the app locally and expose it:
-
-```bash
-uvicorn src.api.main:app --host 127.0.0.1 --port 8001   # single server (API + built frontend)
-cloudflared tunnel --url http://localhost:8001           # prints a public *.trycloudflare.com URL
-```
-
-**Hugging Face Spaces** (free, no credit card) — Docker deploy:
-
-1. [Create a Space](https://huggingface.co/new-space) — choose **Docker** as the
-   SDK and the **CPU basic** (free) hardware.
-2. Push this repo to the Space:
-
-   ```bash
-   git remote add space https://huggingface.co/spaces/<your-username>/<space-name>
-   git push space master:main --force
-   ```
-
-   `git` will prompt for your HF username and a
-   [token](https://huggingface.co/settings/tokens) with write access.
-3. Open `https://<your-username>-<space-name>.hf.space`.
-
-**Render** — the [`render.yaml`](render.yaml) blueprint deploys the same
-container: [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/peterszetotszho-code/StockThrowback)
-
-The app runs as a single Docker container — FastAPI serves both the `/api/*`
-JSON endpoints and the built React frontend.
-
-- Health check: `GET /api/health`
-- Set `DEEPSEEK_API_KEY` (or `OPENAI_API_KEY`) to enable LLM-generated reports;
-  without it the report uses the deterministic offline template.
-
-Run the same container locally:
-
-```bash
-docker build -t stock-trend .
-docker run -p 7860:7860 stock-trend
-```
 
 ## Screenshots
 
