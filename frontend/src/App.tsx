@@ -90,12 +90,20 @@ export default function App() {
             onChange={(date) => date && setStart(toYMD(date))}
             dateFormat="yyyy-MM-dd"
             className="date-input"
+            showMonthDropdown
+            showYearDropdown
+            scrollableYearDropdown
+            yearDropdownItemNumber={30}
           />
           <DatePicker
             selected={parseYMD(end)}
             onChange={(date) => date && setEnd(toYMD(date))}
             dateFormat="yyyy-MM-dd"
             className="date-input"
+            showMonthDropdown
+            showYearDropdown
+            scrollableYearDropdown
+            yearDropdownItemNumber={30}
           />
           <button onClick={handleRun} disabled={loading}>
             {loading ? 'Running…' : 'Run backtest'}

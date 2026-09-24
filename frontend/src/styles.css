@@ -73,6 +73,17 @@ body {
   color: #e2e8f0;
 }
 
+.react-datepicker__month-select,
+.react-datepicker__year-select {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 13px;
+  margin: 0 2px;
+}
+
 .react-datepicker__day-name,
 .react-datepicker__day,
 .react-datepicker__time-name {
