@@ -48,7 +48,7 @@ export function EquityChart({ response }: EquityChartProps) {
         data: response.equity_curves[name].map((p) => [p.time * 1000, p.equity] as [number, number]),
       })),
       ...names.map((name, i) => ({
-        name: `${name} DD`,
+        name: `${name} drawdown`,
         type: 'line' as const,
         xAxisIndex: 1,
         yAxisIndex: 1,

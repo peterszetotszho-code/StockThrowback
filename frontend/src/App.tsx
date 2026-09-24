@@ -169,7 +169,8 @@ export default function App() {
             <dt>Max. Drawdown [%]</dt>
             <dd>
               The largest peak-to-trough decline — the worst loss you would have sat
-              through.
+              through. The equity chart's lower panel (labelled &quot;drawdown&quot;)
+              plots this decline over time.
             </dd>
             <dt>Win Rate [%]</dt>
             <dd>Share of trades that ended profitable.</dd>
