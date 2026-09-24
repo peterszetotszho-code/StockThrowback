@@ -1,0 +1,14 @@
+services:
+  app:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Verify the suite offline, then run the end-to-end backtest pipeline.
+    # The CLI step downloads live data and therefore requires internet access.
+    command: >
+      sh -c "pip install --no-cache-dir -r requirements.txt &&
+             python -m pytest &&
+             python -m src.cli --ticker 0700.HK --start 2022-01-01 --end 2024-12-31 --output outputs/reports/0700.HK.md"
