@@ -47,3 +47,9 @@ def test_split_evaluate_shape(ohlcv):
     result = evaluate.split_evaluate(ohlcv, MAStrategy, train_ratio=0.7)
     assert list(result.index) == ["in_sample", "out_of_sample"]
     assert "sharpe" in result.columns
+
+
+def test_monte_carlo(ohlcv):
+    result = evaluate.monte_carlo(ohlcv, MAStrategy, n_runs=5, seed=0)
+    assert "mean_return_pct" in result.index
+    assert 0 <= result["win_rate_pct"] <= 100

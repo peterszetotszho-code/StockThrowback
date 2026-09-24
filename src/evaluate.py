@@ -197,3 +197,61 @@ def split_evaluate(
             "trades": int(_get(stats, "# Trades") or 0),
         }
     return pd.DataFrame.from_dict(rows, orient="index")
+
+
+def monte_carlo(
+    df: pd.DataFrame,
+    strategy_class,
+    n_runs: int = 20,
+    window_frac: float = 0.5,
+    seed: int = 0,
+    cash: float = 100_000,
+    commission: float = 0.001,
+) -> pd.Series:
+    """Estimate return dispersion by backtesting on random contiguous windows.
+
+    Samples ``n_runs`` random contiguous windows of length ``window_frac`` and
+    reports the distribution of returns, a cheap proxy for robustness to the
+    chosen time period.
+
+    Args:
+        df: OHLCV DataFrame.
+        strategy_class: Strategy subclass.
+        n_runs: Number of random windows.
+        window_frac: Fraction of the series used per window.
+        seed: RNG seed for reproducibility.
+        cash: Initial cash.
+        commission: Commission rate.
+
+    Returns:
+        A Series of summary stats (mean/median/min/max return, win rate).
+    """
+    from .backtest import run_backtest
+
+    rng = np.random.default_rng(seed)
+    n = len(df)
+    window_len = max(int(n * window_frac), 2)
+    returns: list[float] = []
+    for _ in range(n_runs):
+        start = int(rng.integers(0, n - window_len + 1))
+        window = df.iloc[start : start + window_len]
+        stats = run_backtest(window, strategy_class, cash=cash, commission=commission)
+        value = _get(stats, "Return [%]")
+        if pd.notna(value):
+            returns.append(float(value))
+    arr = np.asarray(returns, dtype=float)
+    if arr.size == 0:
+        return pd.Series(
+            {"mean_return_pct": float("nan"), "median_return_pct": float("nan"),
+             "min_return_pct": float("nan"), "max_return_pct": float("nan"),
+             "win_rate_pct": float("nan")}
+        )
+    return pd.Series(
+        {
+            "mean_return_pct": float(arr.mean()),
+            "median_return_pct": float(np.median(arr)),
+            "min_return_pct": float(arr.min()),
+            "max_return_pct": float(arr.max()),
+            "win_rate_pct": float((arr > 0).mean() * 100),
+        }
+    )

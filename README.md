@@ -120,10 +120,10 @@ Honest findings from the same run:
 - AI agent workflow (planning + tool calling + transient-retry)
 - Cost & latency observability for every model/tool call (config-driven pricing)
 - End-to-end RAG report endpoint (`/api/report`) + React dashboard
-- News event recall (GDELT) explaining the worst drawdown window
-- Walk-forward / out-of-sample evaluation and parameter optimization
+- News event recall (GDELT) + knowledge-base retrieval to ground the report
+- Walk-forward / out-of-sample evaluation, parameter optimization, Monte Carlo
 
 ## Remaining / Next
 
-- Wire the knowledge-base RAG direction into the report
-- Deeper robustness checks (Monte Carlo, walk-forward with re-optimization)
+- Expand `knowledge/` with more strategy/regime documents
+- Walk-forward with re-optimization (avoids look-ahead in parameter selection)

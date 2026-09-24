@@ -60,9 +60,23 @@ def test_report(monkeypatch):
     data = response.json()
     assert data["ticker"] == "TEST.HK"
     assert data["report"].startswith("# Report")
-    assert len(data["chunks"]) == 5
-    assert data["citation"]["total_citations"] == 5
+    assert len(data["chunks"]) >= 5
+    assert data["citation"]["total_citations"] == len(data["chunks"])
     assert data["usage"]["calls"] >= 3
+
+
+def test_report_includes_knowledge(monkeypatch):
+    from src.rag import pipeline
+
+    monkeypatch.setattr(pipeline, "fetch_stock_data", lambda ticker, start, end: _synthetic_df())
+    response = client.post(
+        "/api/report",
+        json={"ticker": "TEST.HK", "start": "2022-01-01", "end": "2022-06-01"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert any(c["source_type"] == "knowledge" for c in data["chunks"])
+    assert "Knowledge context" in data["report"]
 
 
 def test_report_with_news(monkeypatch):

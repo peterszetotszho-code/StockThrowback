@@ -1,14 +1,16 @@
 """End-to-end backtest + RAG report pipeline.
 
-Ties together data fetch, backtest, hybrid retrieval, reranking, news event
-recall, citation verification, and usage tracking into a single reproducible
-run. Fully offline by default (hash embedder + heuristic reranker + in-memory
-store); plugging in neural/API models is a drop-in upgrade.
+Ties together data fetch, backtest, hybrid retrieval (market-regime +
+knowledge corpora), reranking, news event recall, citation verification, and
+usage tracking into a single reproducible run. Fully offline by default (hash
+embedder + heuristic reranker + in-memory store); plugging in neural/API models
+is a drop-in upgrade.
 """
 
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 import pandas as pd
 
@@ -21,7 +23,12 @@ from ..strategy import MACDStrategy, MAStrategy, CompositeStrategy
 from .citation import verify_citations
 from .embeddings import HashEmbedder
 from .hybrid_retriever import HybridRetriever
-from .indexers import build_market_regime_chunks, build_news_chunks, fetch_gdelt_articles
+from .indexers import (
+    build_knowledge_chunks,
+    build_market_regime_chunks,
+    build_news_chunks,
+    fetch_gdelt_articles,
+)
 from .keyword_index import BM25KeywordIndex
 from .reranker import get_reranker
 from .vector_store import InMemoryStore
@@ -30,6 +37,8 @@ logger = logging.getLogger(__name__)
 
 STRATEGIES = {"MA": MAStrategy, "MACD": MACDStrategy, "Composite": CompositeStrategy}
 DEFAULT_QUERY_TEMPLATE = "What bullish, bearish, or ranging market regimes occurred for {ticker}?"
+KNOWLEDGE_QUERY = "failure modes and limitations of moving average and trend strategies"
+DEFAULT_KNOWLEDGE_DIR = Path(__file__).resolve().parent.parent.parent / "knowledge"
 
 
 def run_report_pipeline(
@@ -41,6 +50,7 @@ def run_report_pipeline(
     embed_fn=None,
     news_query: str | None = None,
     max_news: int = 10,
+    knowledge_dir: str | Path | None = None,
 ) -> dict:
     """Run the full pipeline and return a report dict with provenance.
 
@@ -48,12 +58,13 @@ def run_report_pipeline(
         ticker: Yahoo Finance ticker.
         start: Inclusive start date "YYYY-MM-DD".
         end: Inclusive end date "YYYY-MM-DD".
-        query: Retrieval query (defaults to a regime-focused question).
-        top_k: Number of market-regime chunks to retrieve and cite.
+        query: Market-regime retrieval query (defaults to a regime question).
+        top_k: Number of chunks to retrieve and cite per corpus.
         embed_fn: Optional callable ``str -> vector`` (defaults to HashEmbedder).
         news_query: Optional company name used to recall news for the worst
             drawdown window (network required).
         max_news: Maximum news articles to recall.
+        knowledge_dir: Directory of knowledge docs (defaults to ``knowledge/``).
 
     Returns:
         A dict with ``report``, ``chunks``, ``citation``, and ``usage`` keys.
@@ -68,24 +79,20 @@ def run_report_pipeline(
     comparison = compare_strategies(results)
     failures = {name: analyze_failures(stats) for name, stats in results.items()}
 
-    # Market-regime corpus + hybrid retrieval.
-    regime_chunks = build_market_regime_chunks(indicators, ticker)
-    keyword = BM25KeywordIndex()
-    keyword.index(regime_chunks)
-    store = InMemoryStore(embed_fn)
-    with tracker.trace("embed", "local:hash") as span:
-        store.add(regime_chunks)
-        span.set_usage(input_tokens=len(regime_chunks))
-
     query_text = query or DEFAULT_QUERY_TEMPLATE.format(ticker=ticker)
-    retriever = HybridRetriever(store.query, keyword)
-    with tracker.trace("rag.retrieve", "hybrid") as span:
-        retrieved = retriever.retrieve(
-            query_text, top_k=top_k, chunks_by_id={c.chunk_id: c for c in regime_chunks}
-        )
-    reranker = get_reranker(prefer_neural=False)
-    with tracker.trace("rerank", "local:heuristic") as span:
-        top = reranker.rerank(query_text, retrieved, top_k=top_k)
+
+    # Market-regime retrieval.
+    regime_chunks = build_market_regime_chunks(indicators, ticker)
+    top_regime = _retrieve(regime_chunks, query_text, top_k, embed_fn, tracker)
+
+    # Knowledge retrieval (only if docs are present).
+    knowledge_dir = Path(knowledge_dir) if knowledge_dir else DEFAULT_KNOWLEDGE_DIR
+    knowledge_chunks = build_knowledge_chunks(knowledge_dir)
+    top_knowledge = (
+        _retrieve(knowledge_chunks, KNOWLEDGE_QUERY, min(top_k, len(knowledge_chunks)), embed_fn, tracker)
+        if knowledge_chunks
+        else []
+    )
 
     # Event recall: news during the worst drawdown window (direct, not retrieved).
     dd_start, dd_end = _worst_drawdown_window(results, start, end)
@@ -102,10 +109,11 @@ def run_report_pipeline(
             logger.warning("News recall skipped: %s", exc)
 
     report_md = _build_report(
-        ticker, start, end, comparison, failures, top, news_chunks, dd_start, dd_end, news_query
+        ticker, start, end, comparison, failures, top_regime, top_knowledge,
+        news_chunks, dd_start, dd_end, news_query,
     )
 
-    cited = list(top) + news_chunks
+    cited = list(top_regime) + list(top_knowledge) + news_chunks
     citation_map = {i + 1: c.chunk_id for i, c in enumerate(cited)}
     citation = verify_citations(report_md, citation_map, {c.chunk_id: c for c in cited}, embed_fn)
 
@@ -135,6 +143,22 @@ def run_report_pipeline(
     }
 
 
+def _retrieve(chunks, query: str, top_k: int, embed_fn, tracker):
+    """Index ``chunks`` (dense + BM25), retrieve, rerank, and return the top-k."""
+    keyword = BM25KeywordIndex()
+    keyword.index(chunks)
+    store = InMemoryStore(embed_fn)
+    with tracker.trace("embed", "local:hash") as span:
+        store.add(chunks)
+        span.set_usage(input_tokens=len(chunks))
+    retriever = HybridRetriever(store.query, keyword)
+    with tracker.trace("rag.retrieve", "hybrid") as span:
+        retrieved = retriever.retrieve(query, top_k=top_k, chunks_by_id={c.chunk_id: c for c in chunks})
+    reranker = get_reranker(prefer_neural=False)
+    with tracker.trace("rerank", "local:heuristic") as span:
+        return reranker.rerank(query, retrieved, top_k=top_k)
+
+
 def _worst_drawdown_window(results: dict, default_start: str, default_end: str) -> tuple[str, str]:
     """Return the (start, end) "YYYY-MM-DD" window around the deepest drawdown."""
     best_date = None
@@ -155,7 +179,10 @@ def _worst_drawdown_window(results: dict, default_start: str, default_end: str) 
     return window_start, window_end
 
 
-def _build_report(ticker, start, end, comparison, failures, regime_chunks, news_chunks, dd_start, dd_end, news_query) -> str:
+def _build_report(
+    ticker, start, end, comparison, failures,
+    regime_chunks, knowledge_chunks, news_chunks, dd_start, dd_end, news_query,
+) -> str:
     lines = [
         f"# Report - {ticker} ({start} to {end})",
         "",
@@ -174,9 +201,17 @@ def _build_report(ticker, start, end, comparison, failures, regime_chunks, news_
         for i, c in enumerate(regime_chunks, start=1)
     ]
 
+    offset = len(regime_chunks)
+    if knowledge_chunks:
+        lines += ["", "## Knowledge context", ""]
+        lines += [
+            f"- [{offset + i}] ({c.source_type}, {c.title or 'n/a'}): {c.text}"
+            for i, c in enumerate(knowledge_chunks, start=1)
+        ]
+        offset += len(knowledge_chunks)
+
     lines += ["", f"## News during worst drawdown ({dd_start} to {dd_end})", ""]
     if news_chunks:
-        offset = len(regime_chunks)
         lines += [
             f"- [{offset + i}] ({c.date or 'n/a'}): {c.text}"
             for i, c in enumerate(news_chunks, start=1)

@@ -50,6 +50,11 @@ Legend:
 ## Phase 13 — Robustness
 - [x] T13.1 walk-forward / out-of-sample evaluation
 - [x] T13.2 parameter optimization
+- [x] T13.3 Monte Carlo robustness check
+
+## Phase 14 — RAG report depth
+- [x] T14.1 news event recall (GDELT) for worst drawdown
+- [x] T14.2 knowledge-base retrieval into report
 
 ## Phase 9 — Tests
 - [x] T9.1 indicator / loader / evaluate / report tests
