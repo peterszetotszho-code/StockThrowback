@@ -61,10 +61,22 @@ def build_news_chunks(articles: list[dict]) -> list[Chunk]:
     return chunks
 
 
+def _gdelt_datetime(date_str: str, suffix: str) -> str:
+    """Format a "YYYY-MM-DD" date for GDELT's ``YYYYMMDDHHMMSS`` datetime params."""
+    return date_str.replace("-", "") + suffix
+
+
+def _iso_date(seendate: str) -> str:
+    """Convert a GDELT "YYYYMMDD..." timestamp to "YYYY-MM-DD" (or empty)."""
+    if len(seendate) < 8:
+        return ""
+    return f"{seendate[:4]}-{seendate[4:6]}-{seendate[6:8]}"
+
+
 def fetch_gdelt_articles(query: str, start: str, end: str, max_records: int = 25) -> list[dict]:
     """Fetch historical news headlines from GDELT (free, no API key).
 
-    Returns a list of dicts with keys ``title``, ``url``, ``date``,
+    Returns a list of dicts with keys ``title``, ``url``, ``date`` (ISO),
     ``source_id``. Only headlines are available in ``artlist`` mode (no full
     text), which is an honest limitation of the free source.
     """
@@ -75,8 +87,8 @@ def fetch_gdelt_articles(query: str, start: str, end: str, max_records: int = 25
         "query": query,
         "mode": "artlist",
         "format": "json",
-        "startdatetime": f"{start}000000",
-        "enddatetime": f"{end}235959",
+        "startdatetime": _gdelt_datetime(start, "000000"),
+        "enddatetime": _gdelt_datetime(end, "235959"),
         "maxrecords": max_records,
         "sort": "datedesc",
     }
@@ -89,7 +101,7 @@ def fetch_gdelt_articles(query: str, start: str, end: str, max_records: int = 25
             {
                 "title": article.get("title", ""),
                 "url": article.get("url", ""),
-                "date": (article.get("seendate", "") or "")[:8],
+                "date": _iso_date(article.get("seendate", "") or ""),
                 "source_id": f"gdelt_{i}",
             }
         )

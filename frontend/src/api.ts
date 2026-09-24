@@ -23,6 +23,8 @@ export interface ReportRequest {
   end: string;
   query?: string;
   top_k?: number;
+  news_query?: string;
+  max_news?: number;
 }
 
 export function runReport(payload: ReportRequest): Promise<ReportResponse> {

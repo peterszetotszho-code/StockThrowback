@@ -14,12 +14,15 @@ export function ReportPanel({ ticker, start, end }: ReportPanelProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ReportResponse | null>(null);
+  const [newsQuery, setNewsQuery] = useState('');
 
   const handleGenerate = async () => {
     setLoading(true);
     setError(null);
     try {
-      setData(await runReport({ ticker, start, end, top_k: 5 }));
+      setData(
+        await runReport({ ticker, start, end, top_k: 5, news_query: newsQuery.trim() || undefined }),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -33,6 +36,11 @@ export function ReportPanel({ ticker, start, end }: ReportPanelProps) {
         <button onClick={handleGenerate} disabled={loading}>
           {loading ? 'Generating…' : 'Generate RAG report'}
         </button>
+        <input
+          value={newsQuery}
+          onChange={(e) => setNewsQuery(e.target.value)}
+          placeholder="Company name for news (optional)"
+        />
         {data && (
           <div className="badges">
             <span className="badge">

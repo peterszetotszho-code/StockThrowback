@@ -63,3 +63,29 @@ def test_report(monkeypatch):
     assert len(data["chunks"]) == 5
     assert data["citation"]["total_citations"] == 5
     assert data["usage"]["calls"] >= 3
+
+
+def test_report_with_news(monkeypatch):
+    from src.rag import pipeline
+
+    monkeypatch.setattr(pipeline, "fetch_stock_data", lambda ticker, start, end: _synthetic_df())
+    monkeypatch.setattr(
+        pipeline,
+        "fetch_gdelt_articles",
+        lambda q, s, e, max_records=10: [
+            {"title": "TEST.HK draws down on news", "url": "http://x", "date": "2022-03-01", "source_id": "g0"}
+        ],
+    )
+    response = client.post(
+        "/api/report",
+        json={
+            "ticker": "TEST.HK",
+            "start": "2022-01-01",
+            "end": "2022-06-01",
+            "news_query": "Tencent",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert any(c["source_type"] == "news" for c in data["chunks"])
+    assert "News during worst drawdown" in data["report"]

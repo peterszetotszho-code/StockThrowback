@@ -62,6 +62,8 @@ class ReportRequest(BaseModel):
     end: str = "2024-12-31"
     query: str | None = None
     top_k: int = 5
+    news_query: str | None = None
+    max_news: int = 10
 
 
 class ReportChunk(BaseModel):

@@ -59,7 +59,13 @@ def run_analysis(req: BacktestRequest) -> BacktestResponse:
 def generate_report(req: ReportRequest) -> ReportResponse:
     """Run the backtest + RAG + citation + usage pipeline and return the report."""
     result = run_report_pipeline(
-        req.ticker, req.start, req.end, query=req.query, top_k=req.top_k
+        req.ticker,
+        req.start,
+        req.end,
+        query=req.query,
+        top_k=req.top_k,
+        news_query=req.news_query,
+        max_news=req.max_news,
     )
     return ReportResponse(**result)
 

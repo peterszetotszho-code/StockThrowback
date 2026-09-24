@@ -86,6 +86,27 @@ def test_extract_citations():
     assert extract_citations("no citations") == []
 
 
+def test_gdelt_datetime_and_iso_date():
+    from src.rag.indexers import _gdelt_datetime, _iso_date
+
+    assert _gdelt_datetime("2024-03-01", "000000") == "20240301000000"
+    assert _gdelt_datetime("2024-03-01", "235959") == "20240301235959"
+    assert _iso_date("20240301T120000Z") == "2024-03-01"
+    assert _iso_date("short") == ""
+
+
+def test_build_news_chunks():
+    from src.rag.indexers import build_news_chunks
+
+    chunks = build_news_chunks(
+        [{"title": "Big news", "url": "http://x", "date": "2024-03-01", "source_id": "g0"}]
+    )
+    assert len(chunks) == 1
+    assert chunks[0].source_type == "news"
+    assert chunks[0].date == "2024-03-01"
+    assert chunks[0].text == "Big news"
+
+
 def test_support_score_cosine():
     assert support_score(np.array([1.0, 0.0]), np.array([1.0, 0.0])) == pytest.approx(1.0)
     assert support_score(np.array([1.0, 0.0]), np.array([0.0, 1.0])) == pytest.approx(0.0)
