@@ -26,22 +26,26 @@ Legend:
 - [x] T4.1 `evaluate.py` (`compare_strategies` + `analyze_failures`)
 
 ## Phase 5 — RAG retrieval stack (design ready)
-- [ ] T5.1 embeddings + vector store + chunking
-- [ ] T5.2 keyword index + hybrid retrieval (RRF)
-- [ ] T5.3 reranker
-- [ ] T5.4 indexers (knowledge / news / market-regime)
-- [ ] T5.5 citation verification
+- [x] T5.1 embeddings + vector store + chunking
+- [x] T5.2 keyword index + hybrid retrieval (RRF)
+- [x] T5.3 reranker
+- [x] T5.4 indexers (knowledge / news / market-regime)
+- [x] T5.5 citation verification
 
 ## Phase 6 — Observability (design ready)
-- [ ] T6.1 `UsageTracker` (cost + latency)
+- [x] T6.1 `UsageTracker` (cost + latency)
 
 ## Phase 7 — Agent orchestration (design ready)
-- [ ] T7.1 tool registry
-- [ ] T7.2 planner + executor + retry
-- [ ] T7.3 orchestrator
+- [x] T7.1 tool registry
+- [x] T7.2 planner + executor + retry
+- [x] T7.3 orchestrator
 
 ## Phase 8 — Report
-- [~] T8.1 `report.py` (Markdown core done; LLM/RAG path pending Phase 5-7)
+- [~] T8.1 `report.py` (Markdown core done; LLM/RAG/tracker wiring pending)
+
+## Phase 12 — Integration (wiring)
+- [ ] T12.1 wire UsageTracker into agent LLM calls + CLI
+- [ ] T12.2 end-to-end RAG command (build index, hybrid retrieve, rerank, cite, report)
 
 ## Phase 9 — Tests
 - [x] T9.1 indicator / loader / evaluate / report tests

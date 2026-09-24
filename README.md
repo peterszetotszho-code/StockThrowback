@@ -40,7 +40,12 @@ stock-trend-lab/
 │   ├── backtest.py         # run + batch backtests
 │   ├── evaluate.py         # strategy comparison + failure analysis
 │   ├── report.py           # Markdown report generation
-│   └── cli.py              # end-to-end entry point
+│   ├── cli.py              # end-to-end backtest entry point
+│   ├── rag/                # hybrid retrieval, reranker, citation, indexers
+│   ├── agent/              # planner/executor/retry orchestration + tools
+│   └── observability/      # cost & latency UsageTracker
+├── config/
+│   └── pricing.json        # LLM/embedding pricing table (config-driven)
 ├── tests/                  # pytest suite
 ├── notebooks/              # exploratory analysis
 ├── knowledge/              # documents for the RAG knowledge base
@@ -85,11 +90,16 @@ Honest findings from the same run:
 - `evaluate.analyze_failures` surfaces each of these automatically instead of
   hiding underperforming periods.
 
-## Roadmap (in development)
+## Implemented
 
-- Hybrid retrieval (dense + BM25) and cross-encoder reranking for RAG
-- AI agent workflow (planning + tool calling + retry) for end-to-end analysis
-- Cost & latency observability for every model/tool call
-- Citation verification for LLM-generated reports
+- Hybrid retrieval (dense + BM25) fused with Reciprocal Rank Fusion
+- Cross-encoder reranking with an offline heuristic fallback
+- Citation verification (existence, support score, coverage)
+- AI agent workflow (planning + tool calling + transient-retry)
+- Cost & latency observability for every model/tool call (config-driven pricing)
+
+## Remaining / Next
+
+- Wire the RAG + agent + observability layers into a single end-to-end command
 - Walk-forward / out-of-sample evaluation
 - Parameter optimization and robustness checks
