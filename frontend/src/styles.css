@@ -51,6 +51,10 @@ body {
 }
 
 /* react-datepicker dark theme */
+.react-datepicker-popper {
+  z-index: 1000;
+}
+
 .react-datepicker {
   background-color: #0f172a;
   border: 1px solid #334155;
