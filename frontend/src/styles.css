@@ -172,6 +172,14 @@ body {
   font-weight: 600;
 }
 
+.glossary-body h4 {
+  color: #94a3b8;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 16px 0 8px;
+}
+
 .glossary-body dd {
   margin: 0;
   color: #cbd5e1;

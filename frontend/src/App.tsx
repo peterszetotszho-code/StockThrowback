@@ -122,7 +122,7 @@ export default function App() {
       </header>
 
       <details className="glossary">
-        <summary>Indicators &amp; strategies explained</summary>
+        <summary>Indicators, metrics &amp; strategies explained</summary>
         <div className="glossary-body">
           <dl>
             <dt>MA (Moving Average)</dt>
@@ -130,6 +130,11 @@ export default function App() {
               Average close price over N days (MA5 = last 5 days). A short MA crossing
               above a long MA is a &quot;golden cross&quot; (buy); the reverse is a
               &quot;death cross&quot; (sell).
+            </dd>
+            <dt>EMA (Exponential MA)</dt>
+            <dd>
+              A moving average that weights recent prices more heavily. MACD is built
+              from EMAs.
             </dd>
             <dt>MACD</dt>
             <dd>
@@ -150,11 +155,38 @@ export default function App() {
               bullish (MA5 &gt; MA20 and MACD &gt; 0), bearish (the opposite), or ranging
               (otherwise).
             </dd>
-            <dt>Strategies</dt>
+          </dl>
+
+          <h4>Backtest metrics</h4>
+          <dl>
+            <dt>Return [%]</dt>
+            <dd>Total percentage gain or loss over the whole period.</dd>
+            <dt>Sharpe Ratio</dt>
             <dd>
-              MA = golden cross buy / death cross sell. MACD = MACD crosses its signal
-              line. Composite = golden cross plus RSI below 70.
+              Return per unit of risk. Higher is better; above 1 is good, negative means
+              the strategy lost money on a risk-adjusted basis.
             </dd>
+            <dt>Max. Drawdown [%]</dt>
+            <dd>
+              The largest peak-to-trough decline — the worst loss you would have sat
+              through.
+            </dd>
+            <dt>Win Rate [%]</dt>
+            <dd>Share of trades that ended profitable.</dd>
+            <dt>Profit Factor</dt>
+            <dd>Total gains divided by total losses. Above 1 means winners are bigger than losers.</dd>
+            <dt>Trades</dt>
+            <dd>Number of round-trip trades executed.</dd>
+          </dl>
+
+          <h4>Strategies</h4>
+          <dl>
+            <dt>MA</dt>
+            <dd>Golden cross buy / death cross sell.</dd>
+            <dt>MACD</dt>
+            <dd>Buys when MACD crosses above its signal line, sells when it crosses below.</dd>
+            <dt>Composite</dt>
+            <dd>MA golden cross plus an RSI filter (buy only when RSI is below 70).</dd>
           </dl>
         </div>
       </details>
