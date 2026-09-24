@@ -84,6 +84,12 @@ body {
   margin: 0 2px;
 }
 
+.react-datepicker__month-select option,
+.react-datepicker__year-select option {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
 .react-datepicker__day-name,
 .react-datepicker__day,
 .react-datepicker__time-name {

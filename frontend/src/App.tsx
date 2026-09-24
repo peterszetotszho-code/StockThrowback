@@ -44,6 +44,14 @@ export default function App() {
   const ticker = (code.trim() + (exchange.trim() ? '.' + exchange.trim() : '')).toUpperCase();
 
   const handleRun = async () => {
+    if (!code.trim()) {
+      setError('Please enter a stock code.');
+      return;
+    }
+    if (start > end) {
+      setError('Start date must be on or before the end date.');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -94,6 +102,7 @@ export default function App() {
             showYearDropdown
             scrollableYearDropdown
             yearDropdownItemNumber={30}
+            maxDate={new Date()}
           />
           <DatePicker
             selected={parseYMD(end)}
@@ -104,6 +113,7 @@ export default function App() {
             showYearDropdown
             scrollableYearDropdown
             yearDropdownItemNumber={30}
+            maxDate={new Date()}
           />
           <button onClick={handleRun} disabled={loading}>
             {loading ? 'Running…' : 'Run backtest'}

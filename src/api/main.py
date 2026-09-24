@@ -37,6 +37,8 @@ def health() -> dict:
 @app.post("/api/backtest", response_model=BacktestResponse)
 def run_analysis(req: BacktestRequest) -> BacktestResponse:
     """Fetch data, run the selected strategies, and return chart + metrics JSON."""
+    if req.start > req.end:
+        raise HTTPException(status_code=422, detail="Start date must be on or before the end date.")
     try:
         df = fetch_stock_data(req.ticker, req.start, req.end)
     except ValueError as exc:
@@ -67,6 +69,8 @@ def run_analysis(req: BacktestRequest) -> BacktestResponse:
 @app.post("/api/report", response_model=ReportResponse)
 def generate_report(req: ReportRequest) -> ReportResponse:
     """Run the backtest + RAG + citation + usage pipeline and return the report."""
+    if req.start > req.end:
+        raise HTTPException(status_code=422, detail="Start date must be on or before the end date.")
     try:
         result = run_report_pipeline(
             req.ticker,

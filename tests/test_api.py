@@ -96,6 +96,15 @@ def test_report_includes_knowledge(monkeypatch):
     assert "Knowledge context" in data["report"]
 
 
+def test_backtest_invalid_date_range():
+    response = client.post(
+        "/api/backtest",
+        json={"ticker": "TEST.HK", "start": "2023-01-01", "end": "2022-01-01"},
+    )
+    assert response.status_code == 422
+    assert "end date" in response.json()["detail"]
+
+
 def test_backtest_invalid_ticker(monkeypatch):
     from src.api import main as api_main
 
