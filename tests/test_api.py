@@ -30,7 +30,9 @@ def _no_company_name(monkeypatch):
     """Prevent real yfinance name lookups during tests."""
     from src.api import main as api_main
 
-    monkeypatch.setattr(api_main, "get_company_name", lambda ticker: None)
+    monkeypatch.setattr(
+        api_main, "get_ticker_info", lambda ticker: {"company_name": None, "currency": None}
+    )
 
 
 def test_health():

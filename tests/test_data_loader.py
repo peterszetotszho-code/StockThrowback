@@ -55,24 +55,25 @@ def test_normalize_multiindex_columns():
     assert list(out.columns) == data_loader.PRICE_COLUMNS
 
 
-def test_get_company_name(monkeypatch):
+def test_get_ticker_info(monkeypatch):
     import yfinance as yf
 
     class FakeTicker:
-        info = {"shortName": "Tencent Holdings"}
+        info = {"longName": "Tencent Holdings Limited", "currency": "HKD"}
 
     monkeypatch.setattr(yf, "Ticker", lambda ticker: FakeTicker())
-    assert data_loader.get_company_name("0700.HK") == "Tencent Holdings"
+    info = data_loader.get_ticker_info("0700.HK")
+    assert info == {"company_name": "Tencent Holdings Limited", "currency": "HKD"}
 
 
-def test_get_company_name_returns_none_on_error(monkeypatch):
+def test_get_ticker_info_returns_none_on_error(monkeypatch):
     import yfinance as yf
 
     def boom(ticker):
         raise RuntimeError("network down")
 
     monkeypatch.setattr(yf, "Ticker", boom)
-    assert data_loader.get_company_name("0700.HK") is None
+    assert data_loader.get_ticker_info("0700.HK") == {"company_name": None, "currency": None}
 
 
 def test_clean_fills_volume_gap():

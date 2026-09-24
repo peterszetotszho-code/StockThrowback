@@ -57,13 +57,51 @@ export default function App() {
             placeholder="Exchange (e.g. HK)"
             title="Exchange suffix; leave empty for US stocks (e.g. AAPL)"
           />
-          <input value={start} onChange={(e) => setStart(e.target.value)} placeholder="Start" />
-          <input value={end} onChange={(e) => setEnd(e.target.value)} placeholder="End" />
+          <input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+          <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
           <button onClick={handleRun} disabled={loading}>
             {loading ? 'Running…' : 'Run backtest'}
           </button>
         </div>
       </header>
+
+      <details className="glossary">
+        <summary>Indicators &amp; strategies explained</summary>
+        <div className="glossary-body">
+          <dl>
+            <dt>MA (Moving Average)</dt>
+            <dd>
+              Average close price over N days (MA5 = last 5 days). A short MA crossing
+              above a long MA is a &quot;golden cross&quot; (buy); the reverse is a
+              &quot;death cross&quot; (sell).
+            </dd>
+            <dt>MACD</dt>
+            <dd>
+              Momentum = fast EMA (12) minus slow EMA (26), plus a 9-day signal line.
+              Positive MACD means bullish momentum.
+            </dd>
+            <dt>RSI</dt>
+            <dd>
+              Relative Strength Index (0–100). Above 70 = overbought, below 30 = oversold.
+            </dd>
+            <dt>Bollinger Bands</dt>
+            <dd>
+              A middle moving average plus/minus 2 standard deviations. Price near the
+              upper band = potentially overbought.
+            </dd>
+            <dt>Trend state</dt>
+            <dd>
+              bullish (MA5 &gt; MA20 and MACD &gt; 0), bearish (the opposite), or ranging
+              (otherwise).
+            </dd>
+            <dt>Strategies</dt>
+            <dd>
+              MA = golden cross buy / death cross sell. MACD = MACD crosses its signal
+              line. Composite = golden cross plus RSI below 70.
+            </dd>
+          </dl>
+        </div>
+      </details>
 
       {error && <div className="error">{error}</div>}
 
@@ -73,6 +111,7 @@ export default function App() {
             <h2>
               Price &amp; indicators — {data.ticker}
               {data.company_name ? ` · ${data.company_name}` : ''}
+              {data.currency ? ` · ${data.currency}` : ''}
             </h2>
             <PriceChart candles={data.candles} />
           </section>

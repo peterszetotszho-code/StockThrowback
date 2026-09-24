@@ -9,7 +9,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from ..backtest import run_backtests
-from ..data_loader import fetch_stock_data, get_company_name
+from ..data_loader import fetch_stock_data, get_ticker_info
 from ..evaluate import analyze_failures, compare_strategies
 from ..indicators import add_all_indicators
 from ..rag.pipeline import run_report_pipeline
@@ -50,9 +50,11 @@ def run_analysis(req: BacktestRequest) -> BacktestResponse:
     results = run_backtests(df, strategies, cash=req.cash, commission=req.commission)
     comparison_df = compare_strategies(results)
 
+    info = get_ticker_info(req.ticker)
     return BacktestResponse(
         ticker=req.ticker,
-        company_name=get_company_name(req.ticker),
+        company_name=info["company_name"],
+        currency=info["currency"],
         start=req.start,
         end=req.end,
         candles=_build_candles(indicators),
@@ -79,7 +81,9 @@ def generate_report(req: ReportRequest) -> ReportResponse:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
-    result["company_name"] = get_company_name(req.ticker)
+    info = get_ticker_info(req.ticker)
+    result["company_name"] = info["company_name"]
+    result["currency"] = info["currency"]
     return ReportResponse(**result)
 
 

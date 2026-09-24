@@ -109,8 +109,8 @@ def fetch_stock_data(
     return df
 
 
-def get_company_name(ticker: str) -> str | None:
-    """Return a ticker's company name via yfinance, or None if unavailable.
+def get_ticker_info(ticker: str) -> dict[str, str | None]:
+    """Return a ticker's company name and currency, or None values if unavailable.
 
     This is a best-effort lookup (network); failures return None rather than
     raising, so callers can degrade gracefully.
@@ -122,7 +122,11 @@ def get_company_name(ticker: str) -> str | None:
         # Prefer the full legal name for display (e.g. "Tencent Holdings
         # Limited") over the short ticker alias ("TENCENT" / "BABA-W").
         name = info.get("longName") or info.get("shortName") or None
-        return name.strip() if name else None
+        currency = info.get("currency") or None
+        return {
+            "company_name": name.strip() if name else None,
+            "currency": currency.strip() if currency else None,
+        }
     except Exception as exc:  # noqa: BLE001 - network / invalid ticker
-        logger.warning("Could not resolve company name for %s: %s", ticker, exc)
-        return None
+        logger.warning("Could not resolve ticker info for %s: %s", ticker, exc)
+        return {"company_name": None, "currency": None}

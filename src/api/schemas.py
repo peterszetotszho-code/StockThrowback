@@ -47,6 +47,7 @@ class BacktestResponse(BaseModel):
 
     ticker: str
     company_name: str | None = None
+    currency: str | None = None
     start: str
     end: str
     candles: list[Candle]
@@ -95,6 +96,7 @@ class ReportResponse(BaseModel):
 
     ticker: str
     company_name: str | None = None
+    currency: str | None = None
     start: str
     end: str
     query: str
