@@ -1,0 +1,9 @@
+# Backend API dependencies (the React frontend lives under frontend/).
+# Install with: pip install -r requirements-app.txt
+
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+pydantic>=2.6.0
+
+# TestClient (API tests)
+httpx>=0.27.0

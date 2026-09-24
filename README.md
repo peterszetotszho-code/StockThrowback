@@ -29,6 +29,26 @@ python -m src.cli --ticker 0700.HK --start 2022-01-01 --end 2024-12-31 --output 
 The CLI downloads live data (requires internet). `python -m pytest` runs fully
 offline and validates the core modules.
 
+## Web App (React + FastAPI)
+
+A full-stack dashboard: a React (Vite + TypeScript) frontend with TradingView
+`lightweight-charts` candlesticks and ECharts equity/drawdown panels, backed by
+a FastAPI JSON API.
+
+```bash
+# Terminal 1 — backend (project root)
+pip install -r requirements.txt -r requirements-app.txt
+uvicorn src.api.main:app --reload
+
+# Terminal 2 — frontend
+cd frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:5173 — the Vite dev server proxies `/api` to the backend
+on port 8000.
+
 ## Project Structure
 
 ```
@@ -43,9 +63,11 @@ stock-trend-lab/
 │   ├── cli.py              # end-to-end backtest entry point
 │   ├── rag/                # hybrid retrieval, reranker, citation, indexers
 │   ├── agent/              # planner/executor/retry orchestration + tools
-│   └── observability/      # cost & latency UsageTracker
+│   ├── observability/      # cost & latency UsageTracker
+│   └── api/                # FastAPI REST API (React backend)
 ├── config/
 │   └── pricing.json        # LLM/embedding pricing table (config-driven)
+├── frontend/               # React + Vite + TypeScript dashboard
 ├── tests/                  # pytest suite
 ├── notebooks/              # exploratory analysis
 ├── knowledge/              # documents for the RAG knowledge base
