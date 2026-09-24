@@ -74,7 +74,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="header">
-        <h1>stock-trend-lab</h1>
+        <h1>Stock Trend</h1>
         <div className="controls">
           <input
             value={code}
