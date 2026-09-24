@@ -14,3 +14,19 @@ env/
 # OS
 .DS_Store
 Thumbs.db
+
+# Secrets
+.env
+
+# Generated caches & outputs (keep the tracked .gitkeep)
+outputs/cache/
+outputs/chroma/
+outputs/reports/
+
+# Test / tooling caches
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
