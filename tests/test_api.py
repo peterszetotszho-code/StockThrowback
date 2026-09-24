@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.api.main import app
+from src.rag.embeddings import HashEmbedder
 
 client = TestClient(app)
 
@@ -53,6 +54,7 @@ def test_report(monkeypatch):
 
     monkeypatch.setattr(pipeline, "fetch_stock_data", lambda ticker, start, end: _synthetic_df())
     monkeypatch.setattr(pipeline, "_auto_llm", lambda: None)
+    monkeypatch.setattr(pipeline, "get_embedder", lambda: HashEmbedder(dim=128))
     response = client.post(
         "/api/report",
         json={"ticker": "TEST.HK", "start": "2022-01-01", "end": "2022-06-01"},
@@ -71,6 +73,7 @@ def test_report_includes_knowledge(monkeypatch):
 
     monkeypatch.setattr(pipeline, "fetch_stock_data", lambda ticker, start, end: _synthetic_df())
     monkeypatch.setattr(pipeline, "_auto_llm", lambda: None)
+    monkeypatch.setattr(pipeline, "get_embedder", lambda: HashEmbedder(dim=128))
     response = client.post(
         "/api/report",
         json={"ticker": "TEST.HK", "start": "2022-01-01", "end": "2022-06-01"},
@@ -105,6 +108,7 @@ def test_report_uses_llm(monkeypatch):
     from src.agent.llm import FakeChatModel, LLMResponse
 
     monkeypatch.setattr(pipeline, "fetch_stock_data", lambda t, s, e: _synthetic_df())
+    monkeypatch.setattr(pipeline, "get_embedder", lambda: HashEmbedder(dim=128))
     llm = FakeChatModel([LLMResponse(content="# LLM report\n\nCites [1] and [2].")])
     result = pipeline.run_report_pipeline("TEST.HK", "2022-01-01", "2022-06-01", llm=llm)
     assert result["report"].startswith("# LLM report")
@@ -117,6 +121,7 @@ def test_report_with_news(monkeypatch):
 
     monkeypatch.setattr(pipeline, "fetch_stock_data", lambda ticker, start, end: _synthetic_df())
     monkeypatch.setattr(pipeline, "_auto_llm", lambda: None)
+    monkeypatch.setattr(pipeline, "get_embedder", lambda: HashEmbedder(dim=128))
     monkeypatch.setattr(
         pipeline,
         "fetch_gdelt_articles",

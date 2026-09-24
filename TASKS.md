@@ -56,6 +56,7 @@ Legend:
 - [x] T14.1 news event recall (GDELT) for worst drawdown
 - [x] T14.2 knowledge-base retrieval into report
 - [x] T14.3 LLM report generation (auto-switch on OPENAI_API_KEY)
+- [x] T14.4 semantic embeddings (sentence-transformers local / OpenAI)
 
 ## Phase 9 — Tests
 - [x] T9.1 indicator / loader / evaluate / report tests

@@ -121,10 +121,27 @@ def test_hash_embedder_deterministic():
 
 
 def test_get_embedder_falls_back_to_hash(monkeypatch):
-    from src.rag.embeddings import HashEmbedder, get_embedder
+    from src.rag import embeddings
 
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    assert isinstance(get_embedder(), HashEmbedder)
+
+    def _unavailable():
+        raise ImportError("sentence-transformers not installed")
+
+    monkeypatch.setattr(embeddings, "SentenceTransformerEmbedder", _unavailable)
+    assert isinstance(embeddings.get_embedder(), embeddings.HashEmbedder)
+
+
+def test_get_embedder_prefers_sentence_transformers(monkeypatch):
+    from src.rag import embeddings
+
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    class FakeEmbedder:
+        pass
+
+    monkeypatch.setattr(embeddings, "SentenceTransformerEmbedder", FakeEmbedder)
+    assert isinstance(embeddings.get_embedder(), FakeEmbedder)
 
 
 def test_openai_embedder_records_usage():
