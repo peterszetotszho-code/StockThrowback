@@ -6,6 +6,32 @@ Systematic historical trend review and strategy backtesting for individual stock
 > pipeline to replay historical trends, backtest technical-indicator strategies,
 > and evaluate their performance honestly — including failure analysis.
 
+## What this does
+
+**Stock Trend** is a systematic tool for reviewing a stock's past and testing
+technical strategies against real history — it deliberately does *not* forecast
+prices. The pipeline has four layers:
+
+1. **Data & indicators** — fetches real market data (Yahoo Finance, cached as
+   Parquet) and computes MA / EMA / MACD / RSI / Bollinger Bands plus a
+   three-state trend label (bullish / bearish / ranging).
+
+2. **Backtesting & evaluation** — runs MA, MACD and Composite strategies with
+   `backtesting.py`, reporting honest metrics (return, Sharpe, max drawdown,
+   win rate, profit factor), plus walk-forward / out-of-sample / Monte Carlo
+   robustness checks and automatic failure analysis.
+
+3. **RAG + LLM report** — turns the numbers into an explanation: hybrid
+   retrieval (dense + BM25, reranked) pulls market-regime snapshots, knowledge
+   documents, and news around the worst drawdown, then an LLM writes a
+   citation-verified report (every claim is grounded in a retrieved chunk).
+
+4. **Agent & observability** — a planner/executor agent with tool calling and
+   retry, wrapped in cost/latency tracking for every model call.
+
+Everything is exposed through a **React + FastAPI** dashboard (screenshots
+below) and a CLI.
+
 ## Screenshots
 
 **Dashboard** — candlestick + indicators, equity & drawdown, strategy comparison, and failure analysis:
@@ -25,15 +51,19 @@ Systematic historical trend review and strategy backtesting for individual stock
 
 ## Tech Stack
 
-- Python 3.10+
-- [`yfinance`](https://github.com/ranaroussi/yfinance) — market data
-- `pandas` / `numpy` — data processing
-- [`backtesting.py`](https://github.com/kernc/backtesting.py) — event-driven backtesting
-- `matplotlib` — visualization
-- `pyarrow` — parquet cache
-- `pytest` — tests
-- Optional (`requirements-optional.txt`): `chromadb`, `rank-bm25`,
-  `sentence-transformers`, `openai` — RAG retrieval, reranking, and LLM reports
+| Layer | Tools |
+|---|---|
+| Data | `yfinance`, `pandas`, `numpy`, `pyarrow` (parquet cache) |
+| Backtesting | [`backtesting.py`](https://github.com/kernc/backtesting.py), `matplotlib` |
+| RAG / LLM (optional) | `chromadb`, `rank-bm25`, `sentence-transformers`, `openai` |
+| API | FastAPI, Pydantic, uvicorn |
+| Frontend | React 18, Vite, TypeScript, `lightweight-charts`, ECharts, react-markdown |
+| Testing | `pytest` |
+
+Requires Python 3.10+. The optional extras (`requirements-optional.txt`) enable
+neural embeddings, Chroma persistence, and LLM-generated reports; without them
+the pipeline falls back to a deterministic offline mode (hash embeddings +
+in-memory store + heuristic reranker + template report).
 
 ## Quick Start
 
