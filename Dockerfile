@@ -24,5 +24,6 @@ RUN pip install --no-cache-dir -r requirements.txt -r requirements-app.txt opena
 COPY . .
 COPY --from=frontend /build/frontend/dist ./frontend/dist
 
-EXPOSE 8000
-CMD ["sh", "-c", "uvicorn src.api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# HF Spaces (and local runs) default to port 7860; Render overrides via $PORT.
+EXPOSE 7860
+CMD ["sh", "-c", "uvicorn src.api.main:app --host 0.0.0.0 --port ${PORT:-7860}"]

@@ -1,3 +1,12 @@
+---
+title: Stock Trend
+emoji: 📈
+colorFrom: indigo
+colorTo: blue
+sdk: docker
+pinned: false
+---
+
 # Stock Trend
 
 Systematic historical trend review and strategy backtesting for individual stocks.
@@ -8,21 +17,39 @@ Systematic historical trend review and strategy backtesting for individual stock
 
 ## Live Demo
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/peterszetotszho-code/StockThrowback)
+Host the full app for free on **Hugging Face Spaces** (Docker SDK, no credit
+card required):
 
-The app is packaged as a single Docker container — FastAPI serves both the
-`/api/*` JSON endpoints and the built React frontend. One click deploys it to
-Render's free tier via the [`render.yaml`](render.yaml) blueprint.
+1. [Create a Space](https://huggingface.co/new-space) — name it (e.g. `stock-trend`),
+   choose **Docker** as the SDK and the **CPU basic** (free) hardware.
+2. Push this repo to the Space:
+
+   ```bash
+   git remote add space https://huggingface.co/spaces/<your-username>/<space-name>
+   git push space master
+   ```
+
+   `git` will prompt for your HF username and a
+   [token](https://huggingface.co/settings/tokens) with write access.
+3. Open `https://<your-username>-<space-name>.hf.space`.
+
+The app runs as a single Docker container — FastAPI serves both the `/api/*`
+JSON endpoints and the built React frontend — listening on port 7860 (HF's
+default).
 
 - Health check: `GET /api/health`
-- Set `DEEPSEEK_API_KEY` (or `OPENAI_API_KEY`) in the Render dashboard to enable
-  LLM-generated reports; without a key it uses the deterministic offline template.
+- Add `DEEPSEEK_API_KEY` (or `OPENAI_API_KEY`) as a Space **secret** to enable
+  LLM-generated reports; without it the report uses the deterministic offline
+  template.
+
+> Prefer Render instead? The [`render.yaml`](render.yaml) blueprint deploys the
+> same container: [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/peterszetotszho-code/StockThrowback)
 
 Run the same container locally:
 
 ```bash
 docker build -t stock-trend .
-docker run -p 8000:8000 stock-trend
+docker run -p 7860:7860 stock-trend
 ```
 
 ## Screenshots
