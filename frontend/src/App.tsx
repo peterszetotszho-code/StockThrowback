@@ -55,7 +55,10 @@ export default function App() {
       {data && (
         <main>
           <section>
-            <h2>Price &amp; indicators — {data.ticker}</h2>
+            <h2>
+              Price &amp; indicators — {data.ticker}
+              {data.company_name ? ` · ${data.company_name}` : ''}
+            </h2>
             <PriceChart candles={data.candles} />
           </section>
           <section>

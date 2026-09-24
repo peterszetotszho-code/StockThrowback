@@ -30,6 +30,7 @@ export interface MetricRow {
 
 export interface BacktestResponse {
   ticker: string;
+  company_name: string | null;
   start: string;
   end: string;
   candles: Candle[];
@@ -72,6 +73,7 @@ export interface UsageSummary {
 
 export interface ReportResponse {
   ticker: string;
+  company_name: string | null;
   start: string;
   end: string;
   query: string;

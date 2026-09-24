@@ -5,11 +5,11 @@ from __future__ import annotations
 import math
 
 import pandas as pd
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from ..backtest import run_backtests
-from ..data_loader import fetch_stock_data
+from ..data_loader import fetch_stock_data, get_company_name
 from ..evaluate import analyze_failures, compare_strategies
 from ..indicators import add_all_indicators
 from ..rag.pipeline import run_report_pipeline
@@ -37,7 +37,13 @@ def health() -> dict:
 @app.post("/api/backtest", response_model=BacktestResponse)
 def run_analysis(req: BacktestRequest) -> BacktestResponse:
     """Fetch data, run the selected strategies, and return chart + metrics JSON."""
-    df = fetch_stock_data(req.ticker, req.start, req.end)
+    try:
+        df = fetch_stock_data(req.ticker, req.start, req.end)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
     indicators = add_all_indicators(df)
 
     strategies = {name: STRATEGIES[name] for name in req.strategies if name in STRATEGIES}
@@ -46,6 +52,7 @@ def run_analysis(req: BacktestRequest) -> BacktestResponse:
 
     return BacktestResponse(
         ticker=req.ticker,
+        company_name=get_company_name(req.ticker),
         start=req.start,
         end=req.end,
         candles=_build_candles(indicators),
@@ -58,15 +65,21 @@ def run_analysis(req: BacktestRequest) -> BacktestResponse:
 @app.post("/api/report", response_model=ReportResponse)
 def generate_report(req: ReportRequest) -> ReportResponse:
     """Run the backtest + RAG + citation + usage pipeline and return the report."""
-    result = run_report_pipeline(
-        req.ticker,
-        req.start,
-        req.end,
-        query=req.query,
-        top_k=req.top_k,
-        news_query=req.news_query,
-        max_news=req.max_news,
-    )
+    try:
+        result = run_report_pipeline(
+            req.ticker,
+            req.start,
+            req.end,
+            query=req.query,
+            top_k=req.top_k,
+            news_query=req.news_query,
+            max_news=req.max_news,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    result["company_name"] = get_company_name(req.ticker)
     return ReportResponse(**result)
 
 

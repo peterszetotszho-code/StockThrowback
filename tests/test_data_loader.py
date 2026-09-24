@@ -55,6 +55,26 @@ def test_normalize_multiindex_columns():
     assert list(out.columns) == data_loader.PRICE_COLUMNS
 
 
+def test_get_company_name(monkeypatch):
+    import yfinance as yf
+
+    class FakeTicker:
+        info = {"shortName": "Tencent Holdings"}
+
+    monkeypatch.setattr(yf, "Ticker", lambda ticker: FakeTicker())
+    assert data_loader.get_company_name("0700.HK") == "Tencent Holdings"
+
+
+def test_get_company_name_returns_none_on_error(monkeypatch):
+    import yfinance as yf
+
+    def boom(ticker):
+        raise RuntimeError("network down")
+
+    monkeypatch.setattr(yf, "Ticker", boom)
+    assert data_loader.get_company_name("0700.HK") is None
+
+
 def test_clean_fills_volume_gap():
     idx = pd.date_range("2022-01-03", periods=4, freq="D")
     df = pd.DataFrame(

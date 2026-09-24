@@ -26,6 +26,13 @@ def _synthetic_df() -> pd.DataFrame:
     )
 
 
+def _no_company_name(monkeypatch):
+    """Prevent real yfinance name lookups during tests."""
+    from src.api import main as api_main
+
+    monkeypatch.setattr(api_main, "get_company_name", lambda ticker: None)
+
+
 def test_health():
     response = client.get("/api/health")
     assert response.status_code == 200
@@ -36,6 +43,7 @@ def test_backtest(monkeypatch):
     from src.api import main as api_main
 
     monkeypatch.setattr(api_main, "fetch_stock_data", lambda ticker, start, end: _synthetic_df())
+    _no_company_name(monkeypatch)
     response = client.post(
         "/api/backtest",
         json={"ticker": "TEST.HK", "start": "2022-01-01", "end": "2022-06-01"},
@@ -55,6 +63,7 @@ def test_report(monkeypatch):
     monkeypatch.setattr(pipeline, "fetch_stock_data", lambda ticker, start, end: _synthetic_df())
     monkeypatch.setattr(pipeline, "_auto_llm", lambda: None)
     monkeypatch.setattr(pipeline, "get_embedder", lambda: HashEmbedder(dim=128))
+    _no_company_name(monkeypatch)
     response = client.post(
         "/api/report",
         json={"ticker": "TEST.HK", "start": "2022-01-01", "end": "2022-06-01"},
@@ -74,6 +83,7 @@ def test_report_includes_knowledge(monkeypatch):
     monkeypatch.setattr(pipeline, "fetch_stock_data", lambda ticker, start, end: _synthetic_df())
     monkeypatch.setattr(pipeline, "_auto_llm", lambda: None)
     monkeypatch.setattr(pipeline, "get_embedder", lambda: HashEmbedder(dim=128))
+    _no_company_name(monkeypatch)
     response = client.post(
         "/api/report",
         json={"ticker": "TEST.HK", "start": "2022-01-01", "end": "2022-06-01"},
@@ -82,6 +92,21 @@ def test_report_includes_knowledge(monkeypatch):
     data = response.json()
     assert any(c["source_type"] == "knowledge" for c in data["chunks"])
     assert "Knowledge context" in data["report"]
+
+
+def test_backtest_invalid_ticker(monkeypatch):
+    from src.api import main as api_main
+
+    def boom(ticker, start, end):
+        raise ValueError(f"No data returned for {ticker} in the given range.")
+
+    monkeypatch.setattr(api_main, "fetch_stock_data", boom)
+    response = client.post(
+        "/api/backtest",
+        json={"ticker": "INVALID", "start": "2022-01-01", "end": "2022-06-01"},
+    )
+    assert response.status_code == 422
+    assert "No data returned" in response.json()["detail"]
 
 
 def test_auto_llm_returns_none_without_key(monkeypatch):
@@ -122,6 +147,7 @@ def test_report_with_news(monkeypatch):
     monkeypatch.setattr(pipeline, "fetch_stock_data", lambda ticker, start, end: _synthetic_df())
     monkeypatch.setattr(pipeline, "_auto_llm", lambda: None)
     monkeypatch.setattr(pipeline, "get_embedder", lambda: HashEmbedder(dim=128))
+    _no_company_name(monkeypatch)
     monkeypatch.setattr(
         pipeline,
         "fetch_gdelt_articles",

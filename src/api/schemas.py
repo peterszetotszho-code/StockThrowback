@@ -46,6 +46,7 @@ class BacktestResponse(BaseModel):
     """Response body for the backtest endpoint."""
 
     ticker: str
+    company_name: str | None = None
     start: str
     end: str
     candles: list[Candle]
@@ -93,6 +94,7 @@ class ReportResponse(BaseModel):
     """Response body for the RAG report endpoint."""
 
     ticker: str
+    company_name: str | None = None
     start: str
     end: str
     query: str
