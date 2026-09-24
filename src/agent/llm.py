@@ -62,17 +62,34 @@ class FakeChatModel:
 
 
 class OpenAIChatModel:
-    """Thin wrapper over the OpenAI SDK; degrades to a clear error when offline."""
+    """Thin wrapper over the OpenAI SDK; works with any OpenAI-compatible API.
 
-    def __init__(self, model: str, client: Any = None) -> None:
+    Pass ``base_url`` and ``api_key`` to target a compatible provider such as
+    DeepSeek; otherwise the OpenAI defaults (env vars) are used.
+    """
+
+    def __init__(
+        self,
+        model: str,
+        client: Any = None,
+        base_url: str | None = None,
+        api_key: str | None = None,
+    ) -> None:
         self.model = model
         self._client = client
+        self._base_url = base_url
+        self._api_key = api_key
 
     def _get_client(self) -> Any:
         if self._client is None:
             from openai import OpenAI  # Lazy import.
 
-            self._client = OpenAI()
+            kwargs: dict[str, Any] = {}
+            if self._api_key:
+                kwargs["api_key"] = self._api_key
+            if self._base_url:
+                kwargs["base_url"] = self._base_url
+            self._client = OpenAI(**kwargs)
         return self._client
 
     def complete(

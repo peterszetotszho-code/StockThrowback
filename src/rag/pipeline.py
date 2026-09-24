@@ -190,21 +190,33 @@ def _retrieve(chunks, query: str, top_k: int, embed_fn, tracker):
 
 
 def _auto_llm():
-    """Return an OpenAIChatModel if an API key is configured, else None."""
+    """Return a chat model if an API key is configured, else None.
+
+    Prefers DeepSeek (OpenAI-compatible) when ``DEEPSEEK_API_KEY`` is set, then
+    falls back to OpenAI. Returns None when neither is configured.
+    """
     try:
         from dotenv import load_dotenv  # Lazy import.
 
         load_dotenv()
     except ImportError:
         pass
-    if not os.getenv("OPENAI_API_KEY"):
-        return None
-    model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
-    try:
-        return OpenAIChatModel(model=model)
-    except Exception as exc:  # noqa: BLE001 - config errors
-        logger.warning("LLM unavailable (%s); using template report.", exc)
-        return None
+    if os.getenv("DEEPSEEK_API_KEY"):
+        try:
+            return OpenAIChatModel(
+                model=os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
+                base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
+                api_key=os.getenv("DEEPSEEK_API_KEY"),
+            )
+        except Exception as exc:  # noqa: BLE001 - config errors
+            logger.warning("DeepSeek LLM unavailable (%s); trying OpenAI.", exc)
+    if os.getenv("OPENAI_API_KEY"):
+        try:
+            return OpenAIChatModel(model=os.getenv("OPENAI_MODEL", "gpt-4.1-mini"))
+        except Exception as exc:  # noqa: BLE001 - config errors
+            logger.warning("LLM unavailable (%s); using template report.", exc)
+            return None
+    return None
 
 
 def _generate_report_with_llm(llm, ticker, start, end, comparison, failures, cited) -> str:

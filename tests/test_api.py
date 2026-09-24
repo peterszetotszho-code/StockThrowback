@@ -52,6 +52,7 @@ def test_report(monkeypatch):
     from src.rag import pipeline
 
     monkeypatch.setattr(pipeline, "fetch_stock_data", lambda ticker, start, end: _synthetic_df())
+    monkeypatch.setattr(pipeline, "_auto_llm", lambda: None)
     response = client.post(
         "/api/report",
         json={"ticker": "TEST.HK", "start": "2022-01-01", "end": "2022-06-01"},
@@ -69,6 +70,7 @@ def test_report_includes_knowledge(monkeypatch):
     from src.rag import pipeline
 
     monkeypatch.setattr(pipeline, "fetch_stock_data", lambda ticker, start, end: _synthetic_df())
+    monkeypatch.setattr(pipeline, "_auto_llm", lambda: None)
     response = client.post(
         "/api/report",
         json={"ticker": "TEST.HK", "start": "2022-01-01", "end": "2022-06-01"},
@@ -83,7 +85,19 @@ def test_auto_llm_returns_none_without_key(monkeypatch):
     from src.rag import pipeline
 
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
     assert pipeline._auto_llm() is None
+
+
+def test_auto_llm_uses_deepseek(monkeypatch):
+    from src.rag import pipeline
+
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-test")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    llm = pipeline._auto_llm()
+    assert llm is not None
+    assert llm.model == "deepseek-chat"
+    assert llm._base_url == "https://api.deepseek.com"
 
 
 def test_report_uses_llm(monkeypatch):
@@ -102,6 +116,7 @@ def test_report_with_news(monkeypatch):
     from src.rag import pipeline
 
     monkeypatch.setattr(pipeline, "fetch_stock_data", lambda ticker, start, end: _synthetic_df())
+    monkeypatch.setattr(pipeline, "_auto_llm", lambda: None)
     monkeypatch.setattr(
         pipeline,
         "fetch_gdelt_articles",
