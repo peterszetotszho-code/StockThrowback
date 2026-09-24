@@ -140,3 +140,130 @@ table.metrics th {
   font-size: 14px;
   line-height: 1.5;
 }
+
+.report-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.report-actions button {
+  background: #2563eb;
+  border: 1px solid #2563eb;
+  color: #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.report-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.report-body {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 20px;
+  align-items: start;
+}
+
+.report-markdown {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 20px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.report-markdown h1 {
+  font-size: 18px;
+  margin-top: 0;
+}
+
+.report-markdown h2 {
+  font-size: 15px;
+  color: #94a3b8;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.report-markdown table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+
+.report-markdown th,
+.report-markdown td {
+  text-align: right;
+  padding: 6px 10px;
+  border-bottom: 1px solid #1e293b;
+}
+
+.report-markdown th:first-child,
+.report-markdown td:first-child {
+  text-align: left;
+}
+
+.chunk-list h3 {
+  font-size: 13px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 10px;
+}
+
+.chunk {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.chunk-meta {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.chunk-index {
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.chunk p {
+  margin: 0;
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+@media (max-width: 860px) {
+  .report-body {
+    grid-template-columns: 1fr;
+  }
+}

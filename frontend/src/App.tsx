@@ -3,6 +3,7 @@ import { runBacktest } from './api';
 import { EquityChart } from './components/EquityChart';
 import { MetricsTable } from './components/MetricsTable';
 import { PriceChart } from './components/PriceChart';
+import { ReportPanel } from './components/ReportPanel';
 import type { BacktestResponse } from './types';
 
 const STRATEGIES = ['MA', 'MACD', 'Composite'];
@@ -76,6 +77,11 @@ export default function App() {
           </section>
         </main>
       )}
+
+      <section>
+        <h2>RAG report</h2>
+        <ReportPanel ticker={ticker} start={start} end={end} />
+      </section>
     </div>
   );
 }

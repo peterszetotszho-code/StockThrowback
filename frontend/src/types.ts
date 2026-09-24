@@ -46,3 +46,37 @@ export interface BacktestRequest {
   cash: number;
   commission: number;
 }
+
+export interface ReportChunk {
+  id: string;
+  source_type: string;
+  date: string | null;
+  text: string;
+  rerank_score: number | null;
+}
+
+export interface CitationSummary {
+  coverage: number;
+  orphan_rate: number;
+  total_citations: number;
+  supported: number;
+}
+
+export interface UsageSummary {
+  calls: number;
+  input_tokens: number;
+  output_tokens: number;
+  latency_ms: number;
+  cost_usd: number;
+}
+
+export interface ReportResponse {
+  ticker: string;
+  start: string;
+  end: string;
+  query: string;
+  report: string;
+  chunks: ReportChunk[];
+  citation: CitationSummary;
+  usage: UsageSummary;
+}

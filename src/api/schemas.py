@@ -52,3 +52,49 @@ class BacktestResponse(BaseModel):
     comparison: list[dict]
     failures: dict[str, str]
     equity_curves: dict[str, list[EquityPoint]]
+
+
+class ReportRequest(BaseModel):
+    """Request body for the RAG report endpoint."""
+
+    ticker: str = "0700.HK"
+    start: str = "2022-01-01"
+    end: str = "2024-12-31"
+    query: str | None = None
+    top_k: int = 5
+
+
+class ReportChunk(BaseModel):
+    id: str
+    source_type: str
+    date: str | None = None
+    text: str
+    rerank_score: float | None = None
+
+
+class CitationSummary(BaseModel):
+    coverage: float
+    orphan_rate: float
+    total_citations: int
+    supported: int
+
+
+class UsageSummary(BaseModel):
+    calls: int
+    input_tokens: int
+    output_tokens: int
+    latency_ms: float
+    cost_usd: float
+
+
+class ReportResponse(BaseModel):
+    """Response body for the RAG report endpoint."""
+
+    ticker: str
+    start: str
+    end: str
+    query: str
+    report: str
+    chunks: list[ReportChunk]
+    citation: CitationSummary
+    usage: UsageSummary

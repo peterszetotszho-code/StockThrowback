@@ -12,8 +12,9 @@ from ..backtest import run_backtests
 from ..data_loader import fetch_stock_data
 from ..evaluate import analyze_failures, compare_strategies
 from ..indicators import add_all_indicators
+from ..rag.pipeline import run_report_pipeline
 from ..strategy import MACDStrategy, MAStrategy, CompositeStrategy
-from .schemas import BacktestRequest, BacktestResponse
+from .schemas import BacktestRequest, BacktestResponse, ReportRequest, ReportResponse
 
 STRATEGIES = {"MA": MAStrategy, "MACD": MACDStrategy, "Composite": CompositeStrategy}
 
@@ -52,6 +53,15 @@ def run_analysis(req: BacktestRequest) -> BacktestResponse:
         failures={name: analyze_failures(stats) for name, stats in results.items()},
         equity_curves={name: _build_equity(stats) for name, stats in results.items()},
     )
+
+
+@app.post("/api/report", response_model=ReportResponse)
+def generate_report(req: ReportRequest) -> ReportResponse:
+    """Run the backtest + RAG + citation + usage pipeline and return the report."""
+    result = run_report_pipeline(
+        req.ticker, req.start, req.end, query=req.query, top_k=req.top_k
+    )
+    return ReportResponse(**result)
 
 
 def _to_seconds(ts: pd.Timestamp) -> int:

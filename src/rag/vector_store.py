@@ -6,6 +6,8 @@ import logging
 from pathlib import Path
 from typing import Callable, Sequence
 
+import numpy as np
+
 from .schemas import Chunk
 
 logger = logging.getLogger(__name__)
@@ -76,3 +78,31 @@ class ChromaStore:
         distances = res["distances"][0]
         # Chroma returns a distance (lower = closer); convert to similarity.
         return [(cid, 1.0 - float(d)) for cid, d in zip(ids, distances)]
+
+
+class InMemoryStore:
+    """Dependency-free dense retriever using cosine similarity over embeddings.
+
+    A lightweight fallback to ``ChromaStore`` for offline use and demos; it
+    keeps the same ``(chunk_id, similarity)`` query contract.
+    """
+
+    def __init__(self, embed_fn: Callable[[str], list[float] | np.ndarray]) -> None:
+        self._embed = embed_fn
+        self._ids: list[str] = []
+        self._vectors: list[np.ndarray] = []
+
+    def add(self, chunks: Sequence[Chunk]) -> None:
+        for chunk in chunks:
+            self._ids.append(chunk.chunk_id)
+            self._vectors.append(np.asarray(self._embed(chunk.text), dtype=float))
+
+    def query(self, query: str, top_k: int = 50) -> list[tuple[str, float]]:
+        if not self._ids:
+            return []
+        matrix = np.stack(self._vectors)
+        q = np.asarray(self._embed(query), dtype=float)
+        norms = np.linalg.norm(matrix, axis=1) * np.linalg.norm(q)
+        similarities = (matrix @ q) / np.where(norms == 0, 1.0, norms)
+        order = np.argsort(-similarities)[:top_k]
+        return [(self._ids[i], float(similarities[i])) for i in order]

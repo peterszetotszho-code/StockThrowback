@@ -46,3 +46,20 @@ def test_backtest(monkeypatch):
     assert len(data["comparison"]) == 3
     assert "MA" in data["equity_curves"]
     assert data["candles"][0]["close"] > 0
+
+
+def test_report(monkeypatch):
+    from src.rag import pipeline
+
+    monkeypatch.setattr(pipeline, "fetch_stock_data", lambda ticker, start, end: _synthetic_df())
+    response = client.post(
+        "/api/report",
+        json={"ticker": "TEST.HK", "start": "2022-01-01", "end": "2022-06-01"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["ticker"] == "TEST.HK"
+    assert data["report"].startswith("# Report")
+    assert len(data["chunks"]) == 5
+    assert data["citation"]["total_citations"] == 5
+    assert data["usage"]["calls"] >= 3
