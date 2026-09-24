@@ -17,33 +17,42 @@ Systematic historical trend review and strategy backtesting for individual stock
 
 ## Live Demo
 
-Host the full app for free on **Hugging Face Spaces** (Docker SDK, no credit
-card required):
+**Live demo:** https://spy-knowledgestorm-hunter-throw.trycloudflare.com
+_(temporary Cloudflare quick tunnel — the URL changes if the tunnel is restarted)_
 
-1. [Create a Space](https://huggingface.co/new-space) — name it (e.g. `stock-trend`),
-   choose **Docker** as the SDK and the **CPU basic** (free) hardware.
+### Host it yourself
+
+**Cloudflare Tunnel** (free, no account) — run the app locally and expose it:
+
+```bash
+uvicorn src.api.main:app --host 127.0.0.1 --port 8001   # single server (API + built frontend)
+cloudflared tunnel --url http://localhost:8001           # prints a public *.trycloudflare.com URL
+```
+
+**Hugging Face Spaces** (free, no credit card) — Docker deploy:
+
+1. [Create a Space](https://huggingface.co/new-space) — choose **Docker** as the
+   SDK and the **CPU basic** (free) hardware.
 2. Push this repo to the Space:
 
    ```bash
    git remote add space https://huggingface.co/spaces/<your-username>/<space-name>
-   git push space master
+   git push space master:main --force
    ```
 
    `git` will prompt for your HF username and a
    [token](https://huggingface.co/settings/tokens) with write access.
 3. Open `https://<your-username>-<space-name>.hf.space`.
 
+**Render** — the [`render.yaml`](render.yaml) blueprint deploys the same
+container: [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/peterszetotszho-code/StockThrowback)
+
 The app runs as a single Docker container — FastAPI serves both the `/api/*`
-JSON endpoints and the built React frontend — listening on port 7860 (HF's
-default).
+JSON endpoints and the built React frontend.
 
 - Health check: `GET /api/health`
-- Add `DEEPSEEK_API_KEY` (or `OPENAI_API_KEY`) as a Space **secret** to enable
-  LLM-generated reports; without it the report uses the deterministic offline
-  template.
-
-> Prefer Render instead? The [`render.yaml`](render.yaml) blueprint deploys the
-> same container: [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/peterszetotszho-code/StockThrowback)
+- Set `DEEPSEEK_API_KEY` (or `OPENAI_API_KEY`) to enable LLM-generated reports;
+  without it the report uses the deterministic offline template.
 
 Run the same container locally:
 
