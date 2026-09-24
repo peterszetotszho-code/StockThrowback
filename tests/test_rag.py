@@ -1,0 +1,115 @@
+"""Tests for the RAG retrieval stack (pure parts + rank_bm25)."""
+
+import numpy as np
+import pytest
+
+from src.rag.chunking import chunk_text
+from src.rag.citation import extract_citations, support_score, verify_citations
+from src.rag.embeddings import HashEmbedder
+from src.rag.hybrid_retriever import reciprocal_rank_fusion
+from src.rag.ids import make_chunk_id
+from src.rag.reranker import HeuristicReranker
+from src.rag.schemas import Chunk
+
+
+def _chunk(chunk_id, source_type, text, date=None):
+    return Chunk(chunk_id=chunk_id, source_type=source_type, source_id="s", text=text, date=date)
+
+
+def test_make_chunk_id():
+    assert make_chunk_id("news", "gdelt_0", 3) == "news:gdelt_0:00003"
+
+
+def test_chunk_text_overlap():
+    text = " ".join(f"word{i}" for i in range(100))
+    chunks = chunk_text(text, chunk_size=30, overlap=10)
+    assert chunks
+    assert all(len(c.split()) <= 30 for c in chunks)
+    assert len(chunks) > 1
+
+
+def test_chunk_text_rejects_bad_overlap():
+    with pytest.raises(ValueError):
+        chunk_text("a b c d", chunk_size=3, overlap=5)
+
+
+def test_rrf_fusion():
+    dense = [("a", 0.9), ("b", 0.8)]
+    sparse = [("b", 5.0), ("c", 4.0)]
+    fused = reciprocal_rank_fusion([dense, sparse], k=60)
+    scores = dict(fused)
+    assert set(scores) == {"a", "b", "c"}
+    # b is rank 2 in dense and rank 1 in sparse -> beats a (rank 1 dense only).
+    assert scores["b"] > scores["a"]
+
+
+def test_keyword_index_search():
+    pytest.importorskip("rank_bm25")
+    from src.rag.keyword_index import BM25KeywordIndex
+
+    # A corpus must be large enough that terms have varied document
+    # frequencies; with 2 docs, rank_bm25's IDF is zero for every term.
+    idx = BM25KeywordIndex()
+    idx.index(
+        [
+            _chunk("k:0:00000", "knowledge", "moving average crossover strategy"),
+            _chunk("k:1:00000", "knowledge", "relative strength index overbought"),
+            _chunk("k:2:00000", "knowledge", "bollinger bands volatility squeeze"),
+            _chunk("k:3:00000", "knowledge", "macd histogram momentum divergence"),
+            _chunk("k:4:00000", "knowledge", "volume weighted average price"),
+        ]
+    )
+    results = idx.search("moving average crossover", top_k=3)
+    assert results
+    assert results[0][0] == "k:0:00000"
+
+
+def test_keyword_index_empty_corpus():
+    pytest.importorskip("rank_bm25")
+    from src.rag.keyword_index import BM25KeywordIndex
+
+    idx = BM25KeywordIndex()
+    idx.index([])
+    assert idx.search("anything") == []
+
+
+def test_heuristic_reranker_components():
+    assert HeuristicReranker.authority(_chunk("x", "knowledge", "t")) == 0.9
+    assert HeuristicReranker.authority(_chunk("x", "news", "t")) == 0.6
+    assert HeuristicReranker.keyword_overlap("moving average", "a moving average line") == 1.0
+    assert HeuristicReranker.keyword_overlap("moving average", "rsi overbought") == 0.0
+
+
+def test_extract_citations():
+    assert extract_citations("see [1] and [2,3]") == [1, 2, 3]
+    assert extract_citations("also [1][2] here") == [1, 2]
+    assert extract_citations("no citations") == []
+
+
+def test_support_score_cosine():
+    assert support_score(np.array([1.0, 0.0]), np.array([1.0, 0.0])) == pytest.approx(1.0)
+    assert support_score(np.array([1.0, 0.0]), np.array([0.0, 1.0])) == pytest.approx(0.0)
+
+
+def test_hash_embedder_deterministic():
+    embedder = HashEmbedder(dim=32)
+    a = embedder.embed("moving average")
+    b = embedder.embed("moving average")
+    assert np.allclose(a, b)
+    assert abs(float(np.linalg.norm(a)) - 1.0) < 1e-9
+
+
+def test_verify_citations():
+    embed = HashEmbedder(dim=64)
+    retrieved = {
+        "k:1:00000": _chunk("k:1:00000", "knowledge", "moving average crossover"),
+        "k:2:00000": _chunk("k:2:00000", "knowledge", "rsi overbought signal"),
+    }
+    citation_map = {1: "k:1:00000", 2: "k:99999999"}  # 2 is an orphan.
+    report = "The moving average crossover triggers a buy. [1] The RSI is overbought. [2]"
+    rep = verify_citations(report, citation_map, retrieved, embed.embed, threshold=0.0)
+    assert rep.total_citations == 2
+    assert rep.orphan_citations == 1
+    assert rep.cited_sentences == 2
+    assert rep.total_sentences == 3
+    assert rep.coverage == pytest.approx(2 / 3)
