@@ -31,11 +31,23 @@ function parseYMD(ymd: string): Date {
   return new Date(`${ymd}T00:00:00`);
 }
 
+// "One year ago today", clamped for leap years (Feb 29 -> Feb 28 in a non-leap year).
+function oneYearAgo(date: Date): Date {
+  const month = date.getMonth();
+  const day = date.getDate();
+  const year = date.getFullYear() - 1;
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  return new Date(year, month, Math.min(day, lastDay));
+}
+
+const DEFAULT_END = toYMD(new Date());
+const DEFAULT_START = toYMD(oneYearAgo(new Date()));
+
 export default function App() {
   const [code, setCode] = useState('0700');
   const [exchange, setExchange] = useState('HK');
-  const [start, setStart] = useState('2022-01-01');
-  const [end, setEnd] = useState('2024-12-31');
+  const [start, setStart] = useState(DEFAULT_START);
+  const [end, setEnd] = useState(DEFAULT_END);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<BacktestResponse | null>(null);
