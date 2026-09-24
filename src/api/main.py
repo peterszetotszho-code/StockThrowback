@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import math
+from pathlib import Path
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from ..backtest import run_backtests
 from ..data_loader import fetch_stock_data, get_ticker_info
@@ -156,3 +158,11 @@ def _build_equity(stats: pd.Series) -> list[dict]:
             }
         )
     return points
+
+
+# Serve the built React frontend when it is present (e.g. the Docker image).
+# In local development Vite serves the frontend on :5173, so this is a no-op
+# unless ``frontend/dist`` exists on disk.
+_FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+if _FRONTEND_DIST.is_dir():
+    app.mount("/", StaticFiles(directory=str(_FRONTEND_DIST), html=True), name="frontend")

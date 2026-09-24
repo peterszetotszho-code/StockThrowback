@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: stock-trend
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      # Optional: enable LLM-generated reports. Leave unset to use the
+      # deterministic offline template. Set the value in the Render dashboard.
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false

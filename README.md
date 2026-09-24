@@ -6,6 +6,25 @@ Systematic historical trend review and strategy backtesting for individual stock
 > pipeline to replay historical trends, backtest technical-indicator strategies,
 > and evaluate their performance honestly — including failure analysis.
 
+## Live Demo
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/peterszetotszho-code/StockThrowback)
+
+The app is packaged as a single Docker container — FastAPI serves both the
+`/api/*` JSON endpoints and the built React frontend. One click deploys it to
+Render's free tier via the [`render.yaml`](render.yaml) blueprint.
+
+- Health check: `GET /api/health`
+- Set `DEEPSEEK_API_KEY` (or `OPENAI_API_KEY`) in the Render dashboard to enable
+  LLM-generated reports; without a key it uses the deterministic offline template.
+
+Run the same container locally:
+
+```bash
+docker build -t stock-trend .
+docker run -p 8000:8000 stock-trend
+```
+
 ## Screenshots
 
 **Dashboard** — candlestick + indicators, equity & drawdown, strategy comparison, and failure analysis:
