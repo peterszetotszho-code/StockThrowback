@@ -34,7 +34,9 @@ def test_fetch_uses_cache(monkeypatch, tmp_path):
     df2 = data_loader.fetch_stock_data("TEST.HK", "2022-01-01", "2022-01-07", cache_dir=tmp_path)
 
     assert calls["n"] == 1
-    pd.testing.assert_frame_equal(df1, df2)
+    # `freq` is metadata that a parquet round-trip does not preserve; the
+    # values are what matter for stock data (which trades on irregular days).
+    pd.testing.assert_frame_equal(df1, df2, check_freq=False)
     assert list(df1.columns) == data_loader.PRICE_COLUMNS
 
 
