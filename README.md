@@ -49,6 +49,10 @@ npm run dev
 Open http://localhost:5173 — the Vite dev server proxies `/api` to the backend
 on port 8000.
 
+Set `OPENAI_API_KEY` in a `.env` file (see `.env.example`) to switch the RAG
+report from the offline template to LLM-generated text with citation
+verification; without a key it falls back to the deterministic template.
+
 ## Project Structure
 
 ```
@@ -121,6 +125,7 @@ Honest findings from the same run:
 - Cost & latency observability for every model/tool call (config-driven pricing)
 - End-to-end RAG report endpoint (`/api/report`) + React dashboard
 - News event recall (GDELT) + knowledge-base retrieval to ground the report
+- LLM report generation (auto-switches on `OPENAI_API_KEY`, template fallback)
 - Walk-forward / out-of-sample evaluation, parameter optimization, Monte Carlo
 
 ## Remaining / Next

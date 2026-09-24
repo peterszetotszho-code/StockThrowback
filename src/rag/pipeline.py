@@ -10,10 +10,12 @@ is a drop-in upgrade.
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 
 import pandas as pd
 
+from ..agent.llm import OpenAIChatModel
 from ..backtest import run_backtests
 from ..data_loader import fetch_stock_data
 from ..evaluate import analyze_failures, compare_strategies
@@ -40,6 +42,22 @@ DEFAULT_QUERY_TEMPLATE = "What bullish, bearish, or ranging market regimes occur
 KNOWLEDGE_QUERY = "failure modes and limitations of moving average and trend strategies"
 DEFAULT_KNOWLEDGE_DIR = Path(__file__).resolve().parent.parent.parent / "knowledge"
 
+REPORT_PROMPT = """\
+Write a concise Markdown report for {ticker} ({start} to {end}) using ONLY the
+facts below. Cite retrieved chunks inline with their [n] number. Do not invent
+numbers. Include sections: Strategy comparison, Failure analysis, Market regime
+context, Knowledge context, News, and Conclusion.
+
+Strategy comparison:
+{comparison}
+
+Failure analysis:
+{failures}
+
+Retrieved chunks (cite with [n]):
+{chunks}
+"""
+
 
 def run_report_pipeline(
     ticker: str,
@@ -51,6 +69,7 @@ def run_report_pipeline(
     news_query: str | None = None,
     max_news: int = 10,
     knowledge_dir: str | Path | None = None,
+    llm=None,
 ) -> dict:
     """Run the full pipeline and return a report dict with provenance.
 
@@ -108,12 +127,25 @@ def run_report_pipeline(
         except Exception as exc:  # noqa: BLE001 - network failures are non-fatal
             logger.warning("News recall skipped: %s", exc)
 
-    report_md = _build_report(
-        ticker, start, end, comparison, failures, top_regime, top_knowledge,
-        news_chunks, dd_start, dd_end, news_query,
-    )
-
     cited = list(top_regime) + list(top_knowledge) + news_chunks
+    model = llm if llm is not None else _auto_llm()
+    if model is not None:
+        try:
+            report_md = _generate_report_with_llm(model, ticker, start, end, comparison, failures, cited)
+            if not report_md:
+                raise ValueError("empty LLM report")
+        except Exception as exc:  # noqa: BLE001 - fall back to the template on any LLM failure
+            logger.warning("LLM report failed (%s); using template report.", exc)
+            report_md = _build_report(
+                ticker, start, end, comparison, failures, top_regime, top_knowledge,
+                news_chunks, dd_start, dd_end, news_query,
+            )
+    else:
+        report_md = _build_report(
+            ticker, start, end, comparison, failures, top_regime, top_knowledge,
+            news_chunks, dd_start, dd_end, news_query,
+        )
+
     citation_map = {i + 1: c.chunk_id for i, c in enumerate(cited)}
     citation = verify_citations(report_md, citation_map, {c.chunk_id: c for c in cited}, embed_fn)
 
@@ -157,6 +189,42 @@ def _retrieve(chunks, query: str, top_k: int, embed_fn, tracker):
     reranker = get_reranker(prefer_neural=False)
     with tracker.trace("rerank", "local:heuristic") as span:
         return reranker.rerank(query, retrieved, top_k=top_k)
+
+
+def _auto_llm():
+    """Return an OpenAIChatModel if an API key is configured, else None."""
+    try:
+        from dotenv import load_dotenv  # Lazy import.
+
+        load_dotenv()
+    except ImportError:
+        pass
+    if not os.getenv("OPENAI_API_KEY"):
+        return None
+    model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+    try:
+        return OpenAIChatModel(model=model)
+    except Exception as exc:  # noqa: BLE001 - config errors
+        logger.warning("LLM unavailable (%s); using template report.", exc)
+        return None
+
+
+def _generate_report_with_llm(llm, ticker, start, end, comparison, failures, cited) -> str:
+    """Generate the report with an LLM, grounded on the retrieved chunks."""
+    chunks_text = "\n".join(
+        f"[{i}] ({c.source_type}): {c.text}" for i, c in enumerate(cited, start=1)
+    )
+    failures_text = "\n".join(f"- **{name}**: {text}" for name, text in failures.items())
+    prompt = REPORT_PROMPT.format(
+        ticker=ticker,
+        start=start,
+        end=end,
+        comparison=comparison.round(2).to_markdown(index=True),
+        failures=failures_text,
+        chunks=chunks_text,
+    )
+    response = llm.complete([{"role": "user", "content": prompt}], temperature=0.0)
+    return response.content or ""
 
 
 def _worst_drawdown_window(results: dict, default_start: str, default_end: str) -> tuple[str, str]:

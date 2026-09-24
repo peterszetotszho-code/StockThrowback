@@ -79,6 +79,25 @@ def test_report_includes_knowledge(monkeypatch):
     assert "Knowledge context" in data["report"]
 
 
+def test_auto_llm_returns_none_without_key(monkeypatch):
+    from src.rag import pipeline
+
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    assert pipeline._auto_llm() is None
+
+
+def test_report_uses_llm(monkeypatch):
+    from src.rag import pipeline
+    from src.agent.llm import FakeChatModel, LLMResponse
+
+    monkeypatch.setattr(pipeline, "fetch_stock_data", lambda t, s, e: _synthetic_df())
+    llm = FakeChatModel([LLMResponse(content="# LLM report\n\nCites [1] and [2].")])
+    result = pipeline.run_report_pipeline("TEST.HK", "2022-01-01", "2022-06-01", llm=llm)
+    assert result["report"].startswith("# LLM report")
+    assert result["citation"]["total_citations"] == 2
+    assert result["citation"]["orphan_rate"] == 0.0
+
+
 def test_report_with_news(monkeypatch):
     from src.rag import pipeline
 

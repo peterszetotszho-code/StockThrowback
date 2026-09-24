@@ -55,6 +55,7 @@ Legend:
 ## Phase 14 — RAG report depth
 - [x] T14.1 news event recall (GDELT) for worst drawdown
 - [x] T14.2 knowledge-base retrieval into report
+- [x] T14.3 LLM report generation (auto-switch on OPENAI_API_KEY)
 
 ## Phase 9 — Tests
 - [x] T9.1 indicator / loader / evaluate / report tests
